@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../Controllers/FavoritesController.dart';
+import '../../../Favorites/FavoritesController.dart';
 import '../../../model/Women/WomenModel.dart';
 import '../../../viewModel/Women/SingleProductViewModel.dart';
 

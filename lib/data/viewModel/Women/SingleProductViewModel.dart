@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../Controllers/CartController.dart';
-import '../../Controllers/FavoritesController.dart';
+import '../../Cart/CartController.dart';
+import '../../Favorites/FavoritesController.dart';
 import '../../Services/FirebaseServices.dart';
 import '../../model/Women/WomenModel.dart';
 

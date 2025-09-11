@@ -1,6 +1,6 @@
 // Controller
 import '../views/home/homeScreen.dart';
-import 'FavoritesController.dart';
+import '../Favorites/FavoritesController.dart';
 import 'package:get/get.dart';
 
 class HomeController extends GetxController {

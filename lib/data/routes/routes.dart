@@ -1,9 +1,12 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../Controllers/FavoritesController.dart';
-import '../Controllers/FavoritesView.dart';
+import '../Cart/CheckoutAddressView.dart';
+import '../Cart/CheckoutPaymentView.dart';
+import '../Cart/CheckoutReviewView.dart';
+import '../Favorites/FavoritesView.dart';
 import '../Controllers/FilterController.dart';
+import '../Splash Screen/SplashScreen.dart';
 import '../views/Filters/FilterView.dart';
 import '../views/Offers/BoysJacketsView.dart';
 import '../views/Offers/InfantsView.dart';
@@ -22,66 +25,12 @@ import '../views/categories/WomenWear/WProductDetailView.dart';
 import '../views/categories/WomenWear/womencat.dart';
 import '../views/categories/kidscat.dart' hide InfantsView;
 import '../views/tabview/tabviews.dart';
-import '../Controllers/CartController.dart';
-import '../Controllers/CartView.dart';
+import '../Cart/CartController.dart';
+import '../Cart/CartView.dart';
 
-// Splash Screen class
-class SplashScreen extends StatefulWidget {
-  @override
-  _SplashScreenState createState() => _SplashScreenState();
-}
 
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    checkLoginStatus();
-  }
 
-  Future<void> checkLoginStatus() async {
-    await Future.delayed(Duration(seconds: 2));
 
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-
-      if (isLoggedIn) {
-        Get.offAllNamed('/home');
-      } else {
-        Get.offAllNamed('/login');
-      }
-    } catch (e) {
-      print('Error checking login status: $e');
-      Get.offAllNamed('/login');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'DVYB',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E5A96),
-              ),
-            ),
-            SizedBox(height: 20),
-            CircularProgressIndicator(
-              color: Color(0xFF1E5A96),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class AppRoutes {
   // Route constants
@@ -124,6 +73,11 @@ class AppRoutes {
   static const productSingle = '/product-single';
   static const cart = '/cart';
 
+  // Checkout routes
+  static const checkoutReview = '/checkout-review';
+  static const checkoutAddress = '/checkout-address';
+  static const checkoutPayment = '/checkout-payment';
+
   //Filters
   static const filter = '/filter';
 
@@ -143,7 +97,6 @@ class AppRoutes {
       transition: Transition.fadeIn,
       transitionDuration: Duration(milliseconds: 300),
       binding: BindingsBuilder(() {
-        // Clear any existing controllers to prevent conflicts
         Get.delete<LoginController>(force: true);
       }),
     ),
@@ -159,17 +112,21 @@ class AppRoutes {
       transition: Transition.fade,
       transitionDuration: Duration(milliseconds: 300),
       binding: BindingsBuilder(() {
-        // Clear any existing controllers to prevent conflicts
         Get.delete<RegisterController>(force: true);
       }),
     ),
 
-    // Main app routes
+    // Main app routes with proper bindings
     GetPage(
       name: home,
       page: () => CustomTabView(),
       transition: Transition.fade,
       transitionDuration: Duration(milliseconds: 300),
+      binding: BindingsBuilder(() {
+        // Clear any existing controllers and reinitialize
+        Get.delete<CartController>(force: true);
+        Get.lazyPut<CartController>(() => CartController(), fenix: true);
+      }),
     ),
 
     // Offer routes
@@ -332,6 +289,9 @@ class AppRoutes {
       page: () => CartView(),
       transition: Transition.fade,
       transitionDuration: Duration(milliseconds: 300),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<CartController>(() => CartController(), fenix: true);
+      }),
     ),
     GetPage(
       name: favorites,
@@ -339,6 +299,33 @@ class AppRoutes {
       transition: Transition.fade,
       transitionDuration: Duration(milliseconds: 300),
     ),
+
+    // Checkout routes with proper bindings
+    GetPage(
+      name: checkoutReview,
+      page: () => CheckoutReviewView(),
+      transition: Transition.rightToLeft,
+      transitionDuration: Duration(milliseconds: 300),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<CartController>(() => CartController(), fenix: true);
+      }),
+    ),
+    GetPage(
+      name: checkoutAddress,
+      page: () => CheckoutAddressView(),
+      transition: Transition.rightToLeft,
+      transitionDuration: Duration(milliseconds: 300),
+    ),
+    GetPage(
+      name: checkoutPayment,
+      page: () => CheckoutPaymentView(),
+      transition: Transition.rightToLeft,
+      transitionDuration: Duration(milliseconds: 300),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<CartController>(() => CartController(), fenix: true);
+      }),
+    ),
+
     //Filters
     GetPage(
       name: filter,
@@ -363,16 +350,16 @@ class AppRoutes {
     Get.offAllNamed(routeName);
   }
 
-  // Helper method to navigate to main app
+  // Helper method to navigate to main app with proper initialization
   static void navigateToHome() {
     // Clean up auth controllers
     Get.delete<LoginController>(force: true);
     Get.delete<RegisterController>(force: true);
 
+    // Ensure cart controller is available
+    Get.lazyPut<CartController>(() => CartController(), fenix: true);
+
     // Navigate to home
     Get.offAllNamed(home);
   }
 }
-
-// Add this to your main.dart file's imports
-//import 'package:shared_preferences/shared_preferences.dart';

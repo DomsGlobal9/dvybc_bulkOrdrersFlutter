@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../Controllers/FavoritesController.dart';
-import '../../Controllers/FavoritesView.dart';
-import '../../Controllers/CartController.dart';
+import '../../Favorites/FavoritesController.dart';
+import '../../Favorites/FavoritesView.dart';
+import '../../Cart/CartController.dart';
 import '../../routes/routes.dart';
 import '../tabview/tabviews.dart';
 
