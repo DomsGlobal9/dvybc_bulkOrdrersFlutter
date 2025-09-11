@@ -100,6 +100,7 @@ class RealFirebaseProductService {
         totalImages: data['totalImages'] ?? imageUrls.length,
         userId: data['userId'],
         userName: data['userName'],
+        price: data['price'],
         isActive: data['isActive'] ?? true,
         createdAt: data['createdAt'],
       );

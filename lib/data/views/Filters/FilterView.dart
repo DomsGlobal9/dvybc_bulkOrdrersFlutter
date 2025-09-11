@@ -42,15 +42,14 @@ class FilterView extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
                 children: [
-                  Icon(Icons.tune, color: Colors.grey[800], size: 20),
+                  Icon(Icons.tune, color: Colors.black87, size: 18),
                   const SizedBox(width: 8),
                   Text(
                     'Filters',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 17,
                       fontWeight: FontWeight.w500,
-                      color: Colors.grey[900],
-                      letterSpacing: -0.2,
+                      color: Colors.black87,
                     ),
                   ),
                   const Spacer(),
@@ -67,7 +66,7 @@ class FilterView extends StatelessWidget {
                       'Clear All',
                       style: TextStyle(
                         color: controller.activeFilterCount > 0
-                            ? const Color(0xFF2196F3)
+                            ? const Color(0xFF007AFF)
                             : Colors.grey[400],
                         fontSize: 15,
                         fontWeight: FontWeight.w400,
@@ -86,12 +85,7 @@ class FilterView extends StatelessWidget {
                   // Left Side - Filter Categories
                   Container(
                     width: 100,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      border: Border(
-                        right: BorderSide(color: Colors.grey[200]!, width: 1),
-                      ),
-                    ),
+                    color: Colors.grey[50],
                     child: Column(
                       children: [
                         _buildFilterTab('Colour', controller),
@@ -136,7 +130,7 @@ class FilterView extends StatelessWidget {
                       child: const Text(
                         'CLOSE',
                         style: TextStyle(
-                          color: Color(0xFF2196F3),
+                          color: Colors.black87,
                           fontWeight: FontWeight.w500,
                           fontSize: 15,
                           letterSpacing: 0.5,
@@ -163,14 +157,14 @@ class FilterView extends StatelessWidget {
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.grey[400]!,
+                            Color(0xFF007AFF),
                           ),
                         ),
                       )
                           : const Text(
                         'APPLY',
                         style: TextStyle(
-                          color: Color(0xFF2196F3),
+                          color: Color(0xFF007AFF),
                           fontWeight: FontWeight.w500,
                           fontSize: 15,
                           letterSpacing: 0.5,
@@ -203,11 +197,6 @@ class FilterView extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               decoration: BoxDecoration(
                 color: isSelected ? Colors.white : Colors.transparent,
-                border: isSelected
-                    ? Border(
-                  right: BorderSide(color: Color(0xFF2196F3), width: 2),
-                )
-                    : null,
               ),
               child: Row(
                 children: [
@@ -216,9 +205,8 @@ class FilterView extends StatelessWidget {
                       title,
                       style: TextStyle(
                         fontSize: 13,
-                        fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
-                        color: isSelected ? Colors.grey[900] : Colors.grey[600],
-                        letterSpacing: -0.1,
+                        fontWeight: FontWeight.w400,
+                        color: isSelected ? Colors.black87 : Colors.grey[600],
                       ),
                     ),
                   ),
@@ -227,7 +215,7 @@ class FilterView extends StatelessWidget {
                       width: 6,
                       height: 6,
                       decoration: const BoxDecoration(
-                        color: Color(0xFF2196F3),
+                        color: Color(0xFF007AFF),
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -281,72 +269,75 @@ class FilterView extends StatelessWidget {
   }
 
   Widget _buildColorContent(FilterController controller) {
-    return SingleChildScrollView(
+    return Container(
       padding: const EdgeInsets.all(20),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Obx(() => GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 6,
-              childAspectRatio: 1,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-            ),
-            itemCount: controller.currentColors.length,
-            itemBuilder: (context, index) {
-              String color = controller.currentColors[index];
-              final isSelected = controller.filters.value.selectedColors.contains(color);
-              final colorValue = controller.colorMap[color] ?? Colors.grey;
+          Expanded(
+            child: Obx(() => ListView.builder(
+              itemCount: controller.currentColors.length,
+              itemBuilder: (context, index) {
+                String color = controller.currentColors[index];
+                final isSelected = controller.filters.value.selectedColors.contains(color);
+                final colorValue = controller.colorMap[color] ?? Colors.grey;
 
-              return GestureDetector(
-                onTap: () => controller.toggleColor(color),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: colorValue,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isSelected
-                          ? Colors.grey[800]!
-                          : Colors.grey[300]!,
-                      width: isSelected ? 2.5 : 1.5,
-                    ),
-                    boxShadow: isSelected ? [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 4,
-                        spreadRadius: 1,
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => controller.toggleColor(color),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: isSelected ? Colors.white : Colors.grey[100],
+                          borderRadius: BorderRadius.circular(8),
+                          border: isSelected
+                              ? Border.all(color: Colors.grey[300]!, width: 1)
+                              : null,
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: colorValue,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.grey[300]!,
+                                  width: 1,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                color,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ] : null,
+                    ),
                   ),
-                  child: isSelected
-                      ? Icon(
-                    Icons.check,
-                    color: _getContrastColor(colorValue),
-                    size: 16,
-                  )
-                      : null,
-                ),
-              );
-            },
-          )),
+                );
+              },
+            )),
+          ),
         ],
       ),
     );
   }
 
-  Color _getContrastColor(Color color) {
-    // Calculate luminance and return appropriate contrast color
-    double luminance = (0.299 * color.red + 0.587 * color.green + 0.114 * color.blue) / 255;
-    return luminance > 0.5 ? Colors.black : Colors.white;
-  }
-
   Widget _buildPriceContent(FilterController controller) {
-    return SingleChildScrollView(
+    return Container(
       padding: const EdgeInsets.all(20),
       child: Obx(() => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -360,7 +351,7 @@ class FilterView extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: Colors.grey[800],
+                  color: Colors.black87,
                 ),
               ),
               Text(
@@ -375,7 +366,7 @@ class FilterView extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: Colors.grey[800],
+                  color: Colors.black87,
                 ),
               ),
             ],
@@ -383,10 +374,10 @@ class FilterView extends StatelessWidget {
           const SizedBox(height: 30),
           SliderTheme(
             data: SliderTheme.of(Get.context!).copyWith(
-              activeTrackColor: const Color(0xFF2196F3),
+              activeTrackColor: const Color(0xFF007AFF),
               inactiveTrackColor: Colors.grey[300],
-              thumbColor: const Color(0xFF2196F3),
-              overlayColor: const Color(0xFF2196F3).withOpacity(0.2),
+              thumbColor: const Color(0xFF007AFF),
+              overlayColor: const Color(0xFF007AFF).withOpacity(0.2),
               trackHeight: 2,
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
             ),
@@ -409,63 +400,49 @@ class FilterView extends StatelessWidget {
   }
 
   Widget _buildRatingContent(FilterController controller) {
-    return SingleChildScrollView(
+    return Container(
       padding: const EdgeInsets.all(20),
       child: Obx(() => Column(
         children: [5, 4, 3, 2, 1].map((rating) {
           final isSelected = controller.filters.value.selectedRatings.contains(rating);
 
-          return Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => controller.toggleRating(rating),
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 18,
-                      height: 18,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: isSelected
-                              ? const Color(0xFF2196F3)
-                              : Colors.grey[400]!,
-                          width: isSelected ? 2 : 1.5,
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => controller.toggleRating(rating),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: isSelected ? Colors.white : Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                    border: isSelected
+                        ? Border.all(color: Colors.grey[300]!, width: 1)
+                        : null,
+                  ),
+                  child: Row(
+                    children: [
+                      Row(
+                        children: List.generate(5, (index) {
+                          return Icon(
+                            index < rating ? Icons.star : Icons.star_outline,
+                            color: Colors.amber[600],
+                            size: 16,
+                          );
+                        }),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '& up',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 13,
                         ),
-                        color: isSelected
-                            ? const Color(0xFF2196F3)
-                            : Colors.transparent,
                       ),
-                      child: isSelected
-                          ? const Icon(
-                        Icons.check,
-                        color: Colors.white,
-                        size: 12,
-                      )
-                          : null,
-                    ),
-                    const SizedBox(width: 16),
-                    Row(
-                      children: List.generate(5, (index) {
-                        return Icon(
-                          index < rating ? Icons.star : Icons.star_outline,
-                          color: Colors.amber[600],
-                          size: 16,
-                        );
-                      }),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '& up',
-                      style: TextStyle(
-                        color: Colors.grey[500],
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -476,41 +453,36 @@ class FilterView extends StatelessWidget {
   }
 
   Widget _buildStyleContent(FilterController controller) {
-    return SingleChildScrollView(
+    return Container(
       padding: const EdgeInsets.all(20),
-      child: Obx(() => Wrap(
-        spacing: 8,
-        runSpacing: 8,
+      child: Obx(() => Column(
         children: controller.currentStyles.map((style) {
           final isSelected = controller.filters.value.selectedStyles.contains(style);
 
-          return Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => controller.toggleStyle(style),
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? const Color(0xFF2196F3).withOpacity(0.1)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isSelected
-                        ? const Color(0xFF2196F3)
-                        : Colors.grey[300]!,
-                    width: 1,
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => controller.toggleStyle(style),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: isSelected ? Colors.white : Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                    border: isSelected
+                        ? Border.all(color: Colors.grey[300]!, width: 1)
+                        : null,
                   ),
-                ),
-                child: Text(
-                  style,
-                  style: TextStyle(
-                    color: isSelected
-                        ? const Color(0xFF2196F3)
-                        : Colors.grey[700],
-                    fontWeight: FontWeight.w400,
-                    fontSize: 13,
+                  child: Text(
+                    style,
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w400,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
               ),
@@ -522,41 +494,36 @@ class FilterView extends StatelessWidget {
   }
 
   Widget _buildFabricContent(FilterController controller) {
-    return SingleChildScrollView(
+    return Container(
       padding: const EdgeInsets.all(20),
-      child: Obx(() => Wrap(
-        spacing: 8,
-        runSpacing: 8,
+      child: Obx(() => Column(
         children: controller.currentFabrics.map((fabric) {
           final isSelected = controller.filters.value.selectedFabrics.contains(fabric);
 
-          return Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => controller.toggleFabric(fabric),
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? const Color(0xFF2196F3).withOpacity(0.1)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isSelected
-                        ? const Color(0xFF2196F3)
-                        : Colors.grey[300]!,
-                    width: 1,
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => controller.toggleFabric(fabric),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: isSelected ? Colors.white : Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                    border: isSelected
+                        ? Border.all(color: Colors.grey[300]!, width: 1)
+                        : null,
                   ),
-                ),
-                child: Text(
-                  fabric,
-                  style: TextStyle(
-                    color: isSelected
-                        ? const Color(0xFF2196F3)
-                        : Colors.grey[700],
-                    fontWeight: FontWeight.w400,
-                    fontSize: 13,
+                  child: Text(
+                    fabric,
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w400,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
               ),
@@ -568,56 +535,37 @@ class FilterView extends StatelessWidget {
   }
 
   Widget _buildDeliveryTimeContent(FilterController controller) {
-    return SingleChildScrollView(
+    return Container(
       padding: const EdgeInsets.all(20),
       child: Obx(() => Column(
         children: controller.availableDeliveryTimes.map((deliveryTime) {
           final isSelected = controller.filters.value.selectedDeliveryTimes.contains(deliveryTime);
 
-          return Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => controller.toggleDeliveryTime(deliveryTime),
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 18,
-                      height: 18,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: isSelected
-                              ? const Color(0xFF2196F3)
-                              : Colors.grey[400]!,
-                          width: isSelected ? 2 : 1.5,
-                        ),
-                        color: isSelected
-                            ? const Color(0xFF2196F3)
-                            : Colors.transparent,
-                      ),
-                      child: isSelected
-                          ? const Icon(
-                        Icons.check,
-                        color: Colors.white,
-                        size: 12,
-                      )
-                          : null,
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => controller.toggleDeliveryTime(deliveryTime),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: isSelected ? Colors.white : Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                    border: isSelected
+                        ? Border.all(color: Colors.grey[300]!, width: 1)
+                        : null,
+                  ),
+                  child: Text(
+                    deliveryTime,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.black87,
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Text(
-                        deliveryTime,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),

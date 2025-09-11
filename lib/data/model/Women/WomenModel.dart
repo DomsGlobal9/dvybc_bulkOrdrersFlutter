@@ -15,6 +15,9 @@ class WomenProduct {
   final String? userId;
   final String? userName;
   final bool? isActive;
+  final int? price;
+  final String? design;
+  final String? dressType;
   final dynamic createdAt;
 
   WomenProduct({
@@ -31,7 +34,10 @@ class WomenProduct {
     this.totalImages,
     this.userId,
     this.userName,
+    this.price,
     this.isActive,
+    this.design,
+    this.dressType,
     this.createdAt,
   });
 

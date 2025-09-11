@@ -197,6 +197,7 @@ class FirebaseProductService {
         imageUrls: imageUrls,
         productId: data['productId'],
         productSize: data['productSize'],
+        //price: data['price'],
         totalImages: data['totalImages'] ?? imageUrls.length,
         userId: data['userId'],
         userName: data['userName'],
