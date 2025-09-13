@@ -7,38 +7,83 @@ import '../tabview/tabviews.dart';
 import 'register.dart' hide Padding;
 
 class LoginController extends GetxController {
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
+  // Initialize controllers in onInit instead of at declaration
+  late final TextEditingController emailController;
+  late final TextEditingController passwordController;
 
   final RxBool rememberMe = false.obs;
   final RxBool obscurePassword = true.obs;
   final RxnString emailError = RxnString();
   final RxnString passwordError = RxnString();
+  final RxnString successMessage = RxnString();
   final RxBool isLoading = false.obs;
 
+  // Add a flag to track disposal state
+  bool _isDisposed = false;
+
+  @override
+  void onInit() {
+    super.onInit();
+    // Initialize controllers here to avoid disposal issues
+    emailController = TextEditingController();
+    passwordController = TextEditingController();
+    _isDisposed = false;
+  }
+
   void togglePasswordVisibility() {
+    if (_isDisposed) return;
     obscurePassword.toggle();
   }
 
   void toggleRememberMe() {
+    if (_isDisposed) return;
     rememberMe.toggle();
   }
 
-  void validateAndLogin() {
+  void clearMessages() {
+    if (_isDisposed) return;
     emailError.value = null;
     passwordError.value = null;
+    successMessage.value = null;
+  }
 
-    if (emailController.text.isEmpty) {
+  void validateAndLogin() {
+    if (_isDisposed) return;
+    clearMessages();
+
+    String email = emailController.text.trim();
+    String password = passwordController.text.trim();
+
+    bool isValid = true;
+
+    // Email validation
+    if (email.isEmpty) {
       emailError.value = 'Email or Phone is required';
+      isValid = false;
+    } else if (GetUtils.isEmail(email)) {
+      // Check if it's a valid email format
+      if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(email)) {
+        emailError.value = 'Please enter a valid email address';
+        isValid = false;
+      }
+    } else if (!GetUtils.isPhoneNumber(email)) {
+      // If it's not an email, check if it's a valid phone number
+      if (!RegExp(r'^[+]?[0-9]{10,15}$').hasMatch(email.replaceAll(' ', ''))) {
+        emailError.value = 'Please enter a valid email or phone number';
+        isValid = false;
+      }
     }
 
-    if (passwordController.text.isEmpty) {
+    // Password validation
+    if (password.isEmpty) {
       passwordError.value = 'Password is required';
-    } else if (passwordController.text.length < 6) {
+      isValid = false;
+    } else if (password.length < 6) {
       passwordError.value = 'Password must be at least 6 characters';
+      isValid = false;
     }
 
-    if (emailError.value == null && passwordError.value == null) {
+    if (isValid) {
       _performLogin();
     }
   }
@@ -46,29 +91,24 @@ class LoginController extends GetxController {
   // Safe Firebase Auth method that handles PigeonUserDetails error
   Future<UserCredential?> _safeFirebaseAuth(String email, String password) async {
     try {
-      // Try normal Firebase Auth
       return await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
     } catch (e) {
-      // If PigeonUserDetails error occurs, try alternative approach
       if (e.toString().contains('PigeonUserDetails') ||
           e.toString().contains('type cast') ||
           e.toString().contains('List<Object?>')) {
         print('PigeonUserDetails error detected, using workaround...');
 
-        // Wait a moment and check if user was actually authenticated
         await Future.delayed(Duration(seconds: 1));
 
         User? currentUser = FirebaseAuth.instance.currentUser;
         if (currentUser != null && currentUser.email == email) {
           print('User authenticated successfully despite error');
-          // Create a simple wrapper since user is actually logged in
           return _MockUserCredential(currentUser);
         }
 
-        // If workaround didn't work, try one more time with a delay
         await Future.delayed(Duration(milliseconds: 500));
         try {
           return await FirebaseAuth.instance.signInWithEmailAndPassword(
@@ -77,21 +117,22 @@ class LoginController extends GetxController {
           );
         } catch (retryError) {
           print('Retry attempt failed: $retryError');
-          // Check again if user is authenticated
           User? retryUser = FirebaseAuth.instance.currentUser;
           if (retryUser != null && retryUser.email == email) {
             return _MockUserCredential(retryUser);
           }
         }
       }
-
-      // Re-throw if it's a different error or workaround failed
       rethrow;
     }
   }
 
   Future<void> _performLogin() async {
+    if (_isDisposed) return;
+
     isLoading.value = true;
+    clearMessages();
+
     String input = emailController.text.trim();
     String password = passwordController.text.trim();
 
@@ -100,14 +141,11 @@ class LoginController extends GetxController {
       String emailToUse = input;
 
       if (GetUtils.isEmail(input)) {
-        // Login with email
         print('Logging in with email: $input');
         cred = await _safeFirebaseAuth(input, password);
       } else {
-        // Login with phone - search in the correct collection
         print('Logging in with phone: $input');
 
-        // Search in B2BBulkOrders_users collection (same as registration)
         QuerySnapshot query = await FirebaseFirestore.instance
             .collection('B2BBulkOrders_users')
             .where('phone', isEqualTo: input)
@@ -115,7 +153,6 @@ class LoginController extends GetxController {
             .get();
 
         if (query.docs.isEmpty) {
-          // Try with +91 prefix
           String phoneWithPrefix = input.startsWith('+91') ? input : '+91$input';
           query = await FirebaseFirestore.instance
               .collection('B2BBulkOrders_users')
@@ -125,7 +162,6 @@ class LoginController extends GetxController {
         }
 
         if (query.docs.isEmpty) {
-          // Try without any prefix if it had one
           if (input.startsWith('+91')) {
             String phoneWithoutPrefix = input.substring(3);
             query = await FirebaseFirestore.instance
@@ -137,10 +173,8 @@ class LoginController extends GetxController {
         }
 
         if (query.docs.isEmpty) {
-          throw FirebaseAuthException(
-              code: 'user-not-found',
-              message: 'No user found with this phone number.'
-          );
+          if (!_isDisposed) emailError.value = 'No account found with this phone number';
+          return;
         }
 
         Map<String, dynamic> userData = query.docs.first.data() as Map<String, dynamic>;
@@ -153,129 +187,127 @@ class LoginController extends GetxController {
       if (cred?.user != null) {
         print('Login successful: ${cred!.user!.uid}');
 
-        // Save login state
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isLoggedIn', true);
 
-        // Show success message
-        Get.snackbar(
-          'Success',
-          'Login successful!',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.withOpacity(0.8),
-          colorText: Colors.white,
-          duration: Duration(seconds: 2),
-        );
+        if (!_isDisposed) successMessage.value = 'Login successful! Redirecting...';
 
-        // Clear form
-        emailController.clear();
-        passwordController.clear();
+        // Wait a moment to show success message
+        await Future.delayed(Duration(seconds: 1));
 
-        // Navigate to main app
+        if (!_isDisposed) {
+          emailController.clear();
+          passwordController.clear();
+          clearMessages();
+        }
+
         Get.offAll(() => CustomTabView());
       } else {
-        throw Exception('Login failed - no user credential returned');
+        if (!_isDisposed) passwordError.value = 'Login failed. Please try again.';
       }
 
     } catch (e) {
       print('Login error: $e');
       _handleLoginError(e);
     } finally {
-      isLoading.value = false;
+      if (!_isDisposed) isLoading.value = false;
     }
   }
 
   void _handleLoginError(dynamic error) {
-    String errorMessage = 'Login failed';
+    if (_isDisposed) return;
 
     if (error is FirebaseAuthException) {
       switch (error.code) {
         case 'user-not-found':
-          errorMessage = 'No account found with this email/phone number.';
+          emailError.value = 'No account found with this email/phone';
           break;
         case 'wrong-password':
-          errorMessage = 'Incorrect password. Please try again.';
+          passwordError.value = 'Incorrect password';
           break;
         case 'invalid-email':
-          errorMessage = 'The email address is not valid.';
+          emailError.value = 'Invalid email address';
           break;
         case 'user-disabled':
-          errorMessage = 'This account has been disabled.';
+          emailError.value = 'This account has been disabled';
           break;
         case 'too-many-requests':
-          errorMessage = 'Too many failed attempts. Please try again later.';
+          passwordError.value = 'Too many failed attempts. Try again later';
           break;
         case 'network-request-failed':
-          errorMessage = 'Network error. Please check your connection.';
+          emailError.value = 'Network error. Check your connection';
           break;
         case 'invalid-credential':
-          errorMessage = 'Invalid email/phone or password.';
+          passwordError.value = 'Invalid email/phone or password';
           break;
         default:
-          errorMessage = error.message ?? 'Login failed. Please try again.';
+          passwordError.value = error.message ?? 'Login failed. Please try again';
       }
     } else if (error.toString().contains('PigeonUserDetails') ||
         error.toString().contains('type cast')) {
-      errorMessage = 'Authentication error. Please try again in a moment.';
+      passwordError.value = 'Authentication error. Please try again';
     } else {
-      errorMessage = 'An unexpected error occurred. Please try again.';
+      passwordError.value = 'An unexpected error occurred';
     }
-
-    Get.snackbar(
-      'Login Error',
-      errorMessage,
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.red.withOpacity(0.8),
-      colorText: Colors.white,
-      duration: Duration(seconds: 3),
-    );
   }
 
   void goToForgotPassword() {
+    if (_isDisposed) return;
     Get.toNamed('/forgot-password');
   }
 
   void loginWithGoogle() async {
+    if (_isDisposed) return;
+
     isLoading.value = true;
     try {
-      Get.snackbar(
-        'Info',
-        'Google login coming soon!',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.blue.withOpacity(0.8),
-        colorText: Colors.white,
-      );
+      successMessage.value = 'Google login coming soon!';
+      await Future.delayed(Duration(seconds: 2));
+      if (!_isDisposed) successMessage.value = null;
     } catch (e) {
       print('Google login error: $e');
     } finally {
-      isLoading.value = false;
+      if (!_isDisposed) isLoading.value = false;
     }
   }
 
   void loginWithFacebook() {
-    Get.snackbar(
-      'Info',
-      'Facebook login coming soon!',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.blue.withOpacity(0.8),
-      colorText: Colors.white,
-    );
+    if (_isDisposed) return;
+    successMessage.value = 'Facebook login coming soon!';
+    Future.delayed(Duration(seconds: 2), () {
+      if (!_isDisposed) successMessage.value = null;
+    });
   }
 
   void loginWithApple() {
-    Get.snackbar(
-      'Info',
-      'Apple login coming soon!',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.blue.withOpacity(0.8),
-      colorText: Colors.white,
-    );
+    if (_isDisposed) return;
+    successMessage.value = 'Apple login coming soon!';
+    Future.delayed(Duration(seconds: 2), () {
+      if (!_isDisposed) successMessage.value = null;
+    });
   }
 
   @override
   void onClose() {
-    emailController.dispose();
-    passwordController.dispose();
+    _isDisposed = true;
+
+    // Only dispose if controllers are initialized and not already disposed
+    try {
+      if (emailController.hasListeners || emailController.text.isNotEmpty) {
+        emailController.dispose();
+      }
+    } catch (e) {
+      print('Email controller already disposed: $e');
+    }
+
+    try {
+      if (passwordController.hasListeners || passwordController.text.isNotEmpty) {
+        passwordController.dispose();
+      }
+    } catch (e) {
+      print('Password controller already disposed: $e');
+    }
+
     super.onClose();
   }
 }
@@ -295,183 +327,291 @@ class _MockUserCredential implements UserCredential {
 }
 
 class LoginScreen extends StatelessWidget {
-  final LoginController controller = Get.put(LoginController(), permanent: false);
-
+  // Create a fresh controller instance each time
   @override
   Widget build(BuildContext context) {
+    // Use Get.put with tag to ensure fresh instance
+    final LoginController controller = Get.put(
+        LoginController(),
+        tag: DateTime.now().millisecondsSinceEpoch.toString(),
+        permanent: false
+    );
+
     return Scaffold(
       backgroundColor: Colors.white,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final screenHeight = constraints.maxHeight;
-          final screenWidth = constraints.maxWidth;
-          final isPortrait = screenHeight > screenWidth;
-          final imageHeight = isPortrait ? screenHeight * 0.35 : screenHeight * 0.25;
-
-          return Column(
-            children: [
-              Stack(
-                children: [
-                  Container(
-                    height: imageHeight,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.blue[100],
-                      image: DecorationImage(
-                        image: AssetImage('assets/images/authg.jpg'),
-                        fit: BoxFit.cover,
-                        onError: (exception, stackTrace) {
-                          print('Image load error: $exception');
-                        },
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      height: isPortrait ? 60 : 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(40),
-                          topRight: Radius.circular(40),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  color: Colors.white,
-                  padding: EdgeInsets.symmetric(horizontal: 24),
-                  child: isPortrait
-                      ? _buildFormContent(isPortrait)
-                      : SingleChildScrollView(
-                    child: _buildFormContent(isPortrait),
-                  ),
+      resizeToAvoidBottomInset: true,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Column(
+              children: [
+                _buildHeaderImage(context),
+                Expanded(
+                  child: _buildScrollableContent(context, controller),
                 ),
-              ),
-            ],
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 
-  Widget _buildFormContent(bool isPortrait) {
+  Widget _buildHeaderImage(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final isKeyboardOpen = keyboardHeight > 0;
+
+    final imageHeight = isKeyboardOpen
+        ? screenHeight * 0.15
+        : screenHeight * 0.35;
+
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 300),
+      height: imageHeight,
+      width: double.infinity,
+      child: Stack(
+        children: [
+          Container(
+            height: imageHeight,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.blue[100],
+              image: DecorationImage(
+                image: AssetImage('assets/images/authg.jpg'),
+                fit: BoxFit.cover,
+                onError: (exception, stackTrace) {
+                  print('Image load error: $exception');
+                },
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(40),
+                  topRight: Radius.circular(40),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScrollableContent(BuildContext context, LoginController controller) {
+    return Container(
+      width: double.infinity,
+      color: Colors.white,
+      child: SingleChildScrollView(
+        physics: ClampingScrollPhysics(),
+        padding: EdgeInsets.only(
+          left: 24,
+          right: 24,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        ),
+        child: _buildFormContent(controller),
+      ),
+    );
+  }
+
+  Widget _buildFormContent(LoginController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        SizedBox(height: 10),
         Text(
           'Welcome back',
           style: TextStyle(
-            fontSize: isPortrait ? 28 : 24,
+            fontSize: 28,
             fontWeight: FontWeight.bold,
             color: Colors.black,
           ),
           textAlign: TextAlign.center,
         ),
-        SizedBox(height: isPortrait ? 6 : 4),
+        SizedBox(height: 6),
         Text(
           'Login to your account',
           style: TextStyle(
-            fontSize: isPortrait ? 14 : 12,
+            fontSize: 14,
             color: Colors.grey[600],
           ),
           textAlign: TextAlign.center,
         ),
-        SizedBox(height: isPortrait ? 24 : 16),
+        SizedBox(height: 24),
+
+        // Success Message
+        Obx(() => controller.successMessage.value != null
+            ? Container(
+          margin: EdgeInsets.only(bottom: 16),
+          padding: EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.green[50],
+            border: Border.all(color: Colors.green[300]!),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.green, size: 20),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  controller.successMessage.value!,
+                  style: TextStyle(color: Colors.green[800], fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+        )
+            : SizedBox.shrink()),
+
+        // Email/Phone Field
         Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(
+              color: controller.emailError.value != null
+                  ? Colors.red
+                  : Colors.grey[300]!,
+            ),
           ),
           child: TextField(
             controller: controller.emailController,
             keyboardType: TextInputType.emailAddress,
-            style: TextStyle(fontSize: isPortrait ? 14 : 12),
+            onChanged: (value) {
+              if (controller.emailError.value != null) {
+                controller.clearMessages();
+              }
+            },
+            style: TextStyle(fontSize: 14),
             decoration: InputDecoration(
               hintText: 'Enter email or phone',
               hintStyle: TextStyle(
                 color: Colors.grey[500],
-                fontSize: isPortrait ? 14 : 12,
+                fontSize: 14,
               ),
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(
                 horizontal: 16,
-                vertical: isPortrait ? 16 : 12,
+                vertical: 16,
               ),
+              suffixIcon: controller.emailError.value != null
+                  ? Icon(Icons.error, color: Colors.red, size: 20)
+                  : null,
             ),
           ),
         ),
         Obx(() => controller.emailError.value != null
-            ? Padding(
-          padding: EdgeInsets.only(top: 4, left: 4),
-          child: Text(
-            controller.emailError.value!,
-            style: TextStyle(
-              color: Colors.red,
-              fontSize: isPortrait ? 11 : 10,
-            ),
+            ? Container(
+          margin: EdgeInsets.only(top: 6, left: 4),
+          child: Row(
+            children: [
+              Icon(Icons.info, color: Colors.red, size: 14),
+              SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  controller.emailError.value!,
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
           ),
         )
             : SizedBox.shrink()),
-        SizedBox(height: isPortrait ? 12 : 8),
+
+        SizedBox(height: 16),
+
+        // Password Field
         Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(
+              color: controller.passwordError.value != null
+                  ? Colors.red
+                  : Colors.grey[300]!,
+            ),
           ),
           child: Obx(() => TextField(
             controller: controller.passwordController,
             obscureText: controller.obscurePassword.value,
-            style: TextStyle(fontSize: isPortrait ? 14 : 12),
+            onChanged: (value) {
+              if (controller.passwordError.value != null) {
+                controller.clearMessages();
+              }
+            },
+            style: TextStyle(fontSize: 14),
             decoration: InputDecoration(
               hintText: 'Password',
               hintStyle: TextStyle(
                 color: Colors.grey[500],
-                fontSize: isPortrait ? 14 : 12,
+                fontSize: 14,
               ),
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(
                 horizontal: 16,
-                vertical: isPortrait ? 16 : 12,
+                vertical: 16,
               ),
-              suffixIcon: IconButton(
-                onPressed: controller.togglePasswordVisibility,
-                icon: Icon(
-                  controller.obscurePassword.value ? Icons.visibility_off : Icons.visibility,
-                  color: Colors.grey[600],
-                  size: isPortrait ? 20 : 18,
-                ),
+              suffixIcon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (controller.passwordError.value != null)
+                    Icon(Icons.error, color: Colors.red, size: 20),
+                  IconButton(
+                    onPressed: controller.togglePasswordVisibility,
+                    icon: Icon(
+                      controller.obscurePassword.value
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                      color: Colors.grey[600],
+                      size: 20,
+                    ),
+                  ),
+                ],
               ),
             ),
           )),
         ),
         Obx(() => controller.passwordError.value != null
-            ? Padding(
-          padding: EdgeInsets.only(top: 4, left: 4),
-          child: Text(
-            controller.passwordError.value!,
-            style: TextStyle(
-              color: Colors.red,
-              fontSize: isPortrait ? 11 : 10,
-            ),
+            ? Container(
+          margin: EdgeInsets.only(top: 6, left: 4),
+          child: Row(
+            children: [
+              Icon(Icons.info, color: Colors.red, size: 14),
+              SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  controller.passwordError.value!,
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
           ),
         )
             : SizedBox.shrink()),
-        SizedBox(height: isPortrait ? 12 : 8),
+
+        SizedBox(height: 16),
+
+        // Remember me and Forgot password row
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               children: [
                 Transform.scale(
-                  scale: isPortrait ? 0.9 : 0.8,
+                  scale: 0.9,
                   child: Obx(() => Checkbox(
                     value: controller.rememberMe.value,
                     onChanged: (value) => controller.toggleRememberMe(),
@@ -483,7 +623,7 @@ class LoginScreen extends StatelessWidget {
                   'Remember me',
                   style: TextStyle(
                     color: Colors.grey[700],
-                    fontSize: isPortrait ? 13 : 11,
+                    fontSize: 13,
                   ),
                 ),
               ],
@@ -494,17 +634,20 @@ class LoginScreen extends StatelessWidget {
                 'Forgot Password?',
                 style: TextStyle(
                   color: Color(0xFF1E5A96),
-                  fontSize: isPortrait ? 13 : 11,
+                  fontSize: 13,
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ),
           ],
         ),
-        SizedBox(height: isPortrait ? 16 : 12),
+
+        SizedBox(height: 20),
+
+        // Login Button
         Container(
           width: double.infinity,
-          height: isPortrait ? 48 : 42,
+          height: 48,
           child: Obx(() => ElevatedButton(
             onPressed: controller.isLoading.value ? null : controller.validateAndLogin,
             style: ElevatedButton.styleFrom(
@@ -527,13 +670,16 @@ class LoginScreen extends StatelessWidget {
                 : Text(
               'Login',
               style: TextStyle(
-                fontSize: isPortrait ? 15 : 13,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
             ),
           )),
         ),
-        SizedBox(height: isPortrait ? 20 : 16),
+
+        SizedBox(height: 24),
+
+        // OR divider
         Row(
           children: [
             Expanded(child: Divider(color: Colors.grey[300], thickness: 1)),
@@ -543,7 +689,7 @@ class LoginScreen extends StatelessWidget {
                 'OR',
                 style: TextStyle(
                   color: Colors.grey[600],
-                  fontSize: isPortrait ? 12 : 10,
+                  fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -551,15 +697,17 @@ class LoginScreen extends StatelessWidget {
             Expanded(child: Divider(color: Colors.grey[300], thickness: 1)),
           ],
         ),
-        SizedBox(height: isPortrait ? 20 : 16),
+
+        SizedBox(height: 24),
+
+        // Social login buttons
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             _buildSocialButton(
-              isPortrait: isPortrait,
               icon: Container(
-                width: isPortrait ? 20 : 18,
-                height: isPortrait ? 20 : 18,
+                width: 20,
+                height: 20,
                 decoration: BoxDecoration(
                   image: DecorationImage(
                     image: NetworkImage('https://developers.google.com/identity/images/g-logo.png'),
@@ -569,29 +717,30 @@ class LoginScreen extends StatelessWidget {
               ),
               onPressed: controller.loginWithGoogle,
             ),
-            SizedBox(width: isPortrait ? 16 : 12),
+            SizedBox(width: 16),
             _buildSocialButton(
-              isPortrait: isPortrait,
               icon: Icon(
                 Icons.facebook,
-                size: isPortrait ? 26 : 22,
+                size: 26,
                 color: Color(0xFF1877F2),
               ),
               onPressed: controller.loginWithFacebook,
             ),
-            SizedBox(width: isPortrait ? 16 : 12),
+            SizedBox(width: 16),
             _buildSocialButton(
-              isPortrait: isPortrait,
               icon: Icon(
                 Icons.apple,
-                size: isPortrait ? 26 : 22,
+                size: 26,
                 color: Colors.black,
               ),
               onPressed: controller.loginWithApple,
             ),
           ],
         ),
-        SizedBox(height: isPortrait ? 20 : 16),
+
+        SizedBox(height: 24),
+
+        // Register link
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -599,7 +748,7 @@ class LoginScreen extends StatelessWidget {
               "Don't have an Account? ",
               style: TextStyle(
                 color: Colors.grey[600],
-                fontSize: isPortrait ? 13 : 11,
+                fontSize: 13,
               ),
             ),
             TextButton(
@@ -613,14 +762,15 @@ class LoginScreen extends StatelessWidget {
                 'Register',
                 style: TextStyle(
                   color: Color(0xFF1E5A96),
-                  fontSize: isPortrait ? 13 : 11,
+                  fontSize: 13,
                   fontWeight: FontWeight.w500,
                 ),
               ),
             )
           ],
         ),
-        SizedBox(height: isPortrait ? 20 : 16),
+
+        SizedBox(height: 20),
       ],
     );
   }
@@ -628,11 +778,10 @@ class LoginScreen extends StatelessWidget {
   Widget _buildSocialButton({
     required Widget icon,
     required VoidCallback onPressed,
-    required bool isPortrait,
   }) {
     return Container(
-      width: isPortrait ? 50 : 45,
-      height: isPortrait ? 50 : 45,
+      width: 50,
+      height: 50,
       decoration: BoxDecoration(
         color: Colors.white,
         shape: BoxShape.circle,

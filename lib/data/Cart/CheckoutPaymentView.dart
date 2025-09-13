@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dvybc/data/routes/routes.dart';
 import 'package:get/get.dart';
 import '../Cart/CartController.dart';
+import '../views/tabview/tabviews.dart';
 
 class CheckoutPaymentView extends StatefulWidget {
   @override
@@ -8,7 +10,7 @@ class CheckoutPaymentView extends StatefulWidget {
 }
 
 class _CheckoutPaymentViewState extends State<CheckoutPaymentView> {
-  int selectedPaymentMethod = 0; // UPI is pre-selected
+  int? selectedPaymentMethod = 0; // UPI is pre-selected
   final CartController cartController = Get.find<CartController>();
 
   @override
@@ -36,44 +38,46 @@ class _CheckoutPaymentViewState extends State<CheckoutPaymentView> {
         ),
         centerTitle: true,
       ),
-      body: Column(
-        children: [
-          // Progress Indicator with dashed lines
-          _buildProgressIndicator(),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Progress Indicator with dashed lines
+            _buildProgressIndicator(),
 
-          Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Total Amount
-                  _buildTotalAmountSection(),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Total Amount
+                    _buildTotalAmountSection(),
 
-                  SizedBox(height: 24),
+                    SizedBox(height: 24),
 
-                  // Bank Offers
-                  _buildBankOffersSection(),
+                    // Bank Offers
+                    _buildBankOffersSection(),
 
-                  SizedBox(height: 24),
+                    SizedBox(height: 24),
 
-                  // Coupons & Rewards
-                  _buildCouponsSection(),
+                    // Coupons & Rewards
+                    _buildCouponsSection(),
 
-                  SizedBox(height: 24),
+                    SizedBox(height: 24),
 
-                  // Payment Methods
-                  _buildPaymentMethodsSection(),
+                    // Payment Methods
+                    _buildPaymentMethodsSection(),
 
-                  SizedBox(height: 100), // Space for bottom button
-                ],
+                    SizedBox(height: 100), // Space for bottom button
+                  ],
+                ),
               ),
             ),
-          ),
 
-          // Bottom Pay Button
-          _buildBottomPayButton(),
-        ],
+            // Bottom Pay Button
+            _buildBottomPayButton(),
+          ],
+        ),
       ),
     );
   }
@@ -137,8 +141,8 @@ class _CheckoutPaymentViewState extends State<CheckoutPaymentView> {
   }
 
   Widget _buildTotalAmountSection() {
-    return Container(
-      child: Obx(() => Row(
+    return GetBuilder<CartController>(
+      builder: (controller) => Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
@@ -150,7 +154,9 @@ class _CheckoutPaymentViewState extends State<CheckoutPaymentView> {
             ),
           ),
           Text(
-            '₹${cartController.finalTotal.toStringAsFixed(0)}',
+            controller.finalTotal <= 0
+                ? '₹0'
+                : '₹${controller.finalTotal.toStringAsFixed(0)}',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -158,7 +164,7 @@ class _CheckoutPaymentViewState extends State<CheckoutPaymentView> {
             ),
           ),
         ],
-      )),
+      ),
     );
   }
 
@@ -191,7 +197,6 @@ class _CheckoutPaymentViewState extends State<CheckoutPaymentView> {
             padding: EdgeInsets.all(8),
             child: Row(
               children: [
-                // Bank logos (mock icons)
                 _buildBankIcon(Colors.red),
                 SizedBox(width: 4),
                 _buildBankIcon(Color(0xFF094D77)),
@@ -233,39 +238,38 @@ class _CheckoutPaymentViewState extends State<CheckoutPaymentView> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[300]!),
       ),
-      child:
-          Row(
-            children: [
-              Text(
-                'View coupons available',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-              ),
-              SizedBox(width: 12),
-              GestureDetector(
-                onTap: () {
-                  // Show all coupons
-                },
-                child: Text(
-                  'All Coupons',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF094D77),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              SizedBox(width: 8),
-              Icon(
-                Icons.arrow_forward_ios,
-                color: Color(0xFF094D77),
-                size: 16,
-              ),
-            ],
+      child: Row(
+        children: [
+          Text(
+            'View coupons available',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+            ),
           ),
-
+          SizedBox(width: 12),
+          GestureDetector(
+            onTap: () {
+              Get.snackbar('Coupons', 'Coupon selection not implemented yet',
+                  snackPosition: SnackPosition.BOTTOM);
+            },
+            child: Text(
+              'All Coupons',
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF094D77),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          SizedBox(width: 8),
+          Icon(
+            Icons.arrow_forward_ios,
+            color: Color(0xFF094D77),
+            size: 16,
+          ),
+        ],
+      ),
     );
   }
 
@@ -317,7 +321,6 @@ class _CheckoutPaymentViewState extends State<CheckoutPaymentView> {
         ),
         child: Row(
           children: [
-            // Radio Button
             Container(
               width: 20,
               height: 20,
@@ -341,10 +344,7 @@ class _CheckoutPaymentViewState extends State<CheckoutPaymentView> {
               )
                   : null,
             ),
-
             SizedBox(width: 16),
-
-            // Payment Icon
             if (showUPILogo)
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -367,10 +367,7 @@ class _CheckoutPaymentViewState extends State<CheckoutPaymentView> {
                 color: Colors.grey[700],
                 size: 24,
               ),
-
             SizedBox(width: 16),
-
-            // Payment Method Title
             Expanded(
               child: Text(
                 title,
@@ -402,35 +399,56 @@ class _CheckoutPaymentViewState extends State<CheckoutPaymentView> {
           ),
         ],
       ),
-      child: Obx(() => Container(
-        width: double.infinity,
-        height: 50,
-        child: ElevatedButton(
-          onPressed: () {
-            // Process payment
-            _processPayment();
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFF094D77),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+      child: GetBuilder<CartController>(
+        builder: (controller) => Container(
+          width: double.infinity,
+          height: 50,
+          child: ElevatedButton(
+            onPressed: controller.finalTotal <= 0
+                ? null
+                : () {
+              _processPayment();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFF094D77),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              disabledBackgroundColor: Colors.grey[400],
             ),
-          ),
-          child: Text(
-            'Pay ₹${cartController.finalTotal.toStringAsFixed(0)}',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
+            child: Text(
+              controller.finalTotal <= 0
+                  ? 'No Amount to Pay'
+                  : 'Pay ₹${controller.finalTotal.toStringAsFixed(0)}',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ),
-      )),
+      ),
     );
   }
 
   void _processPayment() {
-    // Show payment processing dialog
+    if (selectedPaymentMethod == null) {
+      Get.snackbar('Error', 'Please select a payment method',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white);
+      return;
+    }
+
+    if (cartController.finalTotal <= 0) {
+      Get.snackbar('Error', 'Cart total is invalid',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white);
+      return;
+    }
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -457,79 +475,91 @@ class _CheckoutPaymentViewState extends State<CheckoutPaymentView> {
       ),
     );
 
-    // Simulate payment processing
     Future.delayed(Duration(seconds: 2), () {
-      Navigator.of(context).pop(); // Close processing dialog
+      try {
+        Navigator.of(context).pop(); // Close processing dialog
+        cartController.clearCart();
 
-      // Show success dialog
-      Get.dialog(
-        AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.check_circle,
-                color: Colors.green,
-                size: 60,
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Payment Successful!',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
+        Get.dialog(
+          AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.check_circle,
                   color: Colors.green,
+                  size: 60,
                 ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Your order has been placed successfully.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
+                SizedBox(height: 16),
+                Text(
+                  'Payment Successful!',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.green,
+                  ),
                 ),
-                textAlign: TextAlign.center,
+                SizedBox(height: 8),
+                Text(
+                  'Your order has been placed successfully.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+            actions: [
+              Container(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    try {
+                      Get.back(); // Close success dialog
+                      Get.offAllNamed(AppRoutes.home, arguments: {'initialTab': 0});
+                    } catch (e) {
+                      print('Navigation error: $e');
+                      Get.snackbar('Error', 'Failed to navigate to home screen',
+                          snackPosition: SnackPosition.BOTTOM,
+                          backgroundColor: Colors.red,
+                          colorText: Colors.white);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF094D77),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    'Continue Shopping',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
-          actions: [
-            Container(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  // Clear cart after successful payment
-                  cartController.clearCart();
-                  Get.back(); // Close dialog
-                  // Navigate to home with proper functioning
-                  Get.offAllNamed('/home');
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF094D77),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  'Continue Shopping',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        barrierDismissible: false,
-      );
+          barrierDismissible: false,
+        );
+      } catch (e) {
+        print('Payment processing error: $e');
+        Navigator.of(context).pop(); // Close any open dialog
+        Get.snackbar('Error', 'Payment processing failed: $e',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red,
+            colorText: Colors.white);
+      }
     });
   }
 }
 
-// Custom painter for dashed lines
 class DashedLinePainter extends CustomPainter {
   final Color color;
 

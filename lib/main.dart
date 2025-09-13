@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 
 import 'data/Splash Screen/SplashScreen.dart';
 import 'data/routes/routes.dart';
+import 'data/views/auth/forgotPasswordView.dart';
 
 
 void main() async {
@@ -17,7 +18,7 @@ void main() async {
   } catch (e) {
     print('Firebase initialization error: $e');
   }
-
+  Get.put(AuthViewModel());
   runApp(MyApp());
 }
 

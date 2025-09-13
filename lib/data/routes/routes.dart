@@ -28,10 +28,6 @@ import '../views/tabview/tabviews.dart';
 import '../Cart/CartController.dart';
 import '../Cart/CartView.dart';
 
-
-
-
-
 class AppRoutes {
   // Route constants
   static const splash = '/splash';
@@ -88,23 +84,31 @@ class AppRoutes {
       page: () => SplashScreen(),
       transition: Transition.fadeIn,
       transitionDuration: Duration(milliseconds: 300),
+      binding: BindingsBuilder(() {
+        // Clear all controllers on splash
+        _clearAllControllers();
+      }),
     ),
 
-    // Authentication routes
+    // Authentication routes with proper cleanup
     GetPage(
       name: login,
       page: () => LoginScreen(),
       transition: Transition.fadeIn,
       transitionDuration: Duration(milliseconds: 300),
       binding: BindingsBuilder(() {
-        Get.delete<LoginController>(force: true);
+        // Clear auth controllers and reinitialize login
+        _clearAuthControllers();
       }),
     ),
     GetPage(
       name: forgotPassword,
-      page: () => ForgotPasswordScreen(),
+      page: () => ForgotPasswordView(),
       transition: Transition.fade,
       transitionDuration: Duration(milliseconds: 300),
+      binding: BindingsBuilder(() {
+        _clearAuthControllers();
+      }),
     ),
     GetPage(
       name: register,
@@ -112,7 +116,8 @@ class AppRoutes {
       transition: Transition.fade,
       transitionDuration: Duration(milliseconds: 300),
       binding: BindingsBuilder(() {
-        Get.delete<RegisterController>(force: true);
+        // Clear auth controllers before registration
+        _clearAuthControllers();
       }),
     ),
 
@@ -123,9 +128,9 @@ class AppRoutes {
       transition: Transition.fade,
       transitionDuration: Duration(milliseconds: 300),
       binding: BindingsBuilder(() {
-        // Clear any existing controllers and reinitialize
-        Get.delete<CartController>(force: true);
-        Get.lazyPut<CartController>(() => CartController(), fenix: true);
+        // Clear auth controllers and ensure app controllers are available
+        _clearAuthControllers();
+        _initializeAppControllers();
       }),
     ),
 
@@ -340,26 +345,96 @@ class AppRoutes {
     ),
   ];
 
-  // Helper method to navigate with controller cleanup
-  static void navigateToAuth(String routeName) {
-    // Clean up existing auth controllers
-    Get.delete<LoginController>(force: true);
-    Get.delete<RegisterController>(force: true);
+  // Helper methods for controller management
+  static void _clearAllControllers() {
+    try {
+      // Clear auth controllers
+      if (Get.isRegistered<LoginController>()) {
+        Get.delete<LoginController>(force: true);
+      }
+      if (Get.isRegistered<RegisterController>()) {
+        Get.delete<RegisterController>(force: true);
+      }
 
-    // Navigate to the route
+      // Clear app controllers
+      if (Get.isRegistered<CartController>()) {
+        Get.delete<CartController>(force: true);
+      }
+      if (Get.isRegistered<FilterController>()) {
+        Get.delete<FilterController>(force: true);
+      }
+
+      print('All controllers cleared successfully');
+    } catch (e) {
+      print('Error clearing controllers: $e');
+    }
+  }
+
+  static void _clearAuthControllers() {
+    try {
+      Get.delete<LoginController>(force: true);
+      Get.delete<RegisterController>(force: true);
+      print('Auth controllers cleared successfully');
+    } catch (e) {
+      print('Error clearing auth controllers: $e');
+    }
+  }
+
+  static void _initializeAppControllers() {
+    try {
+      // Initialize cart controller for the app
+      if (!Get.isRegistered<CartController>()) {
+        Get.lazyPut<CartController>(() => CartController(), fenix: true);
+      }
+      print('App controllers initialized successfully');
+    } catch (e) {
+      print('Error initializing app controllers: $e');
+    }
+  }
+
+  // Helper method to navigate with complete controller cleanup
+  static void navigateToAuth(String routeName) {
+    // Clear all existing controllers
+    _clearAllControllers();
+
+    // Navigate to the route and clear navigation stack
     Get.offAllNamed(routeName);
   }
 
   // Helper method to navigate to main app with proper initialization
   static void navigateToHome() {
-    // Clean up auth controllers
-    Get.delete<LoginController>(force: true);
-    Get.delete<RegisterController>(force: true);
+    // Clear auth controllers
+    _clearAuthControllers();
 
-    // Ensure cart controller is available
-    Get.lazyPut<CartController>(() => CartController(), fenix: true);
+    // Initialize app controllers
+    _initializeAppControllers();
 
-    // Navigate to home
+    // Navigate to home and clear all previous routes
     Get.offAllNamed(home);
+  }
+
+  // Helper method for logout - clears everything and goes to login
+  static void logout() {
+    // Clear all controllers
+    _clearAllControllers();
+
+    // Clear any stored data if needed
+    _clearStoredData();
+
+    // Navigate to login
+    Get.offAllNamed(login);
+  }
+
+  static void _clearStoredData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // Clear specific keys, not all preferences
+      await prefs.remove('user_token');
+      await prefs.remove('user_data');
+      // Add other keys you want to clear on logout
+      print('Stored data cleared successfully');
+    } catch (e) {
+      print('Error clearing stored data: $e');
+    }
   }
 }
