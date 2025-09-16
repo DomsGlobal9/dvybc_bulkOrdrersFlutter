@@ -1,13 +1,12 @@
 import 'package:get/get.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../Cart/CartController.dart';
 import '../../Favorites/FavoritesController.dart';
-import '../../Services/FirebaseServices.dart';
 import '../../model/Women/WomenModel.dart';
 
-
-// Fixed SingleProductController
+// Updated SingleProductController for nested Firebase structure
 class SingleProductController extends GetxController {
   final Rx<WomenProduct?> currentProduct = Rx<WomenProduct?>(null);
   final RxString selectedSize = 'M'.obs;
@@ -18,7 +17,7 @@ class SingleProductController extends GetxController {
   final RxBool isLoadingSimilar = false.obs;
   final RxString error = ''.obs;
 
-  late StreamSubscription<List<WomenProduct>>? _similarProductsSubscription;
+  StreamSubscription<QuerySnapshot>? _similarProductsSubscription;
 
   // Get controller instances with lazy initialization
   FavoritesController get _favoritesController =>
@@ -52,22 +51,52 @@ class SingleProductController extends GetxController {
     _similarProductsSubscription?.cancel();
 
     try {
-      // Get similar products of the same type
-      _similarProductsSubscription = FirebaseProductService.getProductsByType(product.category).listen(
-            (products) {
-          // Filter out the current product and limit to 8 similar products
-          List<WomenProduct> filteredProducts = products
-              .where((p) => p.id != product.id)
-              .take(8)
-              .toList();
+      print('🔍 Loading similar products for: ${product.name}');
 
-          similarProducts.value = filteredProducts;
+      // Query similar products using collectionGroup from all users
+      Query query = FirebaseFirestore.instance.collectionGroup('products');
+
+      // Filter by same dressType but exclude current product
+      if (product.dressType != null && product.dressType!.isNotEmpty) {
+        query = query.where('dressType', isEqualTo: product.dressType);
+      }
+
+      _similarProductsSubscription = query
+          .limit(20) // Get more to filter out current product
+          .snapshots()
+          .listen(
+            (QuerySnapshot snapshot) {
+          print('📦 Found ${snapshot.docs.length} potential similar products');
+
+          List<WomenProduct> similarList = [];
+
+          for (QueryDocumentSnapshot doc in snapshot.docs) {
+            try {
+              // Skip the current product
+              if (doc.id == product.id) continue;
+
+              Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+              String userId = doc.reference.parent.parent!.id;
+
+              WomenProduct? similarProduct = _mapDocumentToWomenProduct(doc, data, userId);
+              if (similarProduct != null) {
+                similarList.add(similarProduct);
+              }
+            } catch (e) {
+              print('❌ Error processing similar product ${doc.id}: $e');
+            }
+          }
+
+          // Limit to 8 similar products
+          similarProducts.value = similarList.take(8).toList();
           isLoadingSimilar.value = false;
+
+          print('✅ Loaded ${similarProducts.length} similar products');
         },
         onError: (e) {
           error.value = 'Failed to load similar products: $e';
           isLoadingSimilar.value = false;
-          print('Error loading similar products: $e');
+          print('❌ Error loading similar products: $e');
 
           // Fallback to static similar products if Firebase fails
           _generateFallbackSimilarProducts(product);
@@ -76,10 +105,78 @@ class SingleProductController extends GetxController {
     } catch (e) {
       error.value = 'Failed to load similar products: $e';
       isLoadingSimilar.value = false;
-      print('Error in loadSimilarProducts: $e');
+      print('❌ Exception in loadSimilarProducts: $e');
 
       // Fallback to static similar products
       _generateFallbackSimilarProducts(product);
+    }
+  }
+
+  // Map Firestore document to WomenProduct
+  WomenProduct? _mapDocumentToWomenProduct(QueryDocumentSnapshot doc, Map<String, dynamic> data, String userId) {
+    try {
+      // Extract image URLs
+      List<String> imageUrls = [];
+      if (data['imageUrls'] is List) {
+        imageUrls = List<String>.from(data['imageUrls']);
+      } else if (data['imageURLs'] is List) {
+        imageUrls = List<String>.from(data['imageURLs']);
+      }
+
+      // Extract colors and sizes
+      List<String> selectedColors = [];
+      if (data['selectedColors'] is List) {
+        selectedColors = List<String>.from(data['selectedColors']);
+      }
+
+      List<String> selectedSizes = [];
+      if (data['selectedSizes'] is List) {
+        selectedSizes = List<String>.from(data['selectedSizes']);
+      }
+
+      // Handle price
+      int? price;
+      if (data['price'] != null) {
+        if (data['price'] is String) {
+          price = int.tryParse(data['price']);
+        } else if (data['price'] is int) {
+          price = data['price'];
+        }
+      }
+
+      String productName = data['title']?.toString() ??
+          data['name']?.toString() ??
+          data['dressType']?.toString() ??
+          'Fashion Item';
+
+      return WomenProduct(
+        id: doc.id,
+        name: productName,
+        image: imageUrls.isNotEmpty ? imageUrls.first : '',
+        category: data['category']?.toString() ?? 'WOMEN',
+        description: data['description']?.toString() ?? 'Beautiful fashion item',
+        gender: data['category']?.toString() ?? 'WOMEN',
+        subcategory: data['dressType']?.toString() ?? 'fashion',
+        imageUrls: imageUrls,
+        productId: doc.id,
+        productSize: selectedSizes.isNotEmpty ? selectedSizes.first : null,
+        totalImages: imageUrls.length,
+        userId: userId,
+        userName: data['userName']?.toString(),
+        isActive: data['isActive'] ?? true,
+        price: price,
+        design: data['craft']?.toString(),
+        dressType: data['dressType']?.toString(),
+        material: data['fabric']?.toString(),
+        selectedColors: selectedColors,
+        selectedSizes: selectedSizes,
+        createdAt: data['createdAt'],
+        timestamp: data['timestamp'],
+        units: data['units'],
+      );
+    } catch (e) {
+      print('❌ Error mapping document ${doc.id}: $e');
+      return null;
     }
   }
 
@@ -237,252 +334,4 @@ class SingleProductController extends GetxController {
     _similarProductsSubscription?.cancel();
     super.onClose();
   }
-}
-
-// Fixed ProductDetailController
-class ProductDetailController extends GetxController {
-  final RxList<WomenProduct> productVariations = <WomenProduct>[].obs;
-  final RxList<WomenProduct> filteredProducts = <WomenProduct>[].obs;
-  final RxBool isLoading = false.obs;
-  final RxString searchQuery = ''.obs;
-  final RxString error = ''.obs;
-
-  late StreamSubscription<List<WomenProduct>>? _productSubscription;
-  String _currentGender = 'Women';
-  String _currentCategory = '';
-  String _currentProductName = '';
-
-  @override
-  void onInit() {
-    super.onInit();
-  }
-
-  void loadProductVariations(String productName, String category, {String gender = 'Women'}) {
-    isLoading.value = true;
-    error.value = '';
-    _currentGender = gender;
-    _currentCategory = category;
-    _currentProductName = productName;
-
-    // Cancel previous subscription if exists
-    _productSubscription?.cancel();
-
-    try {
-      // First try to get products by type (category)
-      _productSubscription = FirebaseProductService.getProductsByType(category).listen(
-            (products) {
-          if (products.isNotEmpty) {
-            productVariations.value = products;
-            filteredProducts.value = products;
-            isLoading.value = false;
-          } else {
-            // If no products of this type, get all products
-            _loadAllProducts();
-          }
-        },
-        onError: (e) {
-          error.value = 'Failed to load product variations: $e';
-          isLoading.value = false;
-          print('Error loading product variations: $e');
-          // Fallback to all products
-          _loadAllProducts();
-        },
-      );
-    } catch (e) {
-      error.value = 'Failed to load product variations: $e';
-      isLoading.value = false;
-      print('Error in loadProductVariations: $e');
-      _loadAllProducts();
-    }
-  }
-
-  void _loadAllProducts() {
-    _productSubscription?.cancel();
-    _productSubscription = FirebaseProductService.getAllProducts().listen(
-          (products) {
-        productVariations.value = products;
-        filteredProducts.value = products;
-        isLoading.value = false;
-      },
-      onError: (e) {
-        error.value = 'Failed to load products: $e';
-        isLoading.value = false;
-        print('Error loading all products: $e');
-      },
-    );
-  }
-
-  void searchProducts(String query) {
-    searchQuery.value = query;
-    if (query.isEmpty) {
-      filteredProducts.value = productVariations;
-    } else {
-      filteredProducts.value = productVariations
-          .where((product) =>
-      product.name.toLowerCase().contains(query.toLowerCase()) ||
-          product.description.toLowerCase().contains(query.toLowerCase()) ||
-          product.category.toLowerCase().contains(query.toLowerCase()))
-          .toList();
-    }
-  }
-
-  void retryLoading() {
-    if (_currentProductName.isNotEmpty && _currentCategory.isNotEmpty) {
-      loadProductVariations(_currentProductName, _currentCategory, gender: _currentGender);
-    } else {
-      _loadAllProducts();
-    }
-  }
-
-  void loadProductsForGender(String productName, String category, String gender) {
-    loadProductVariations(productName, category, gender: gender);
-  }
-
-  void loadProductsByType(String productType, {String gender = 'Women'}) {
-    isLoading.value = true;
-    error.value = '';
-    _currentGender = gender;
-    _currentCategory = productType;
-
-    _productSubscription?.cancel();
-    _productSubscription = FirebaseProductService.getProductsByType(productType).listen(
-          (products) {
-        productVariations.value = products;
-        filteredProducts.value = products;
-        isLoading.value = false;
-      },
-      onError: (e) {
-        error.value = 'Failed to load products by type: $e';
-        isLoading.value = false;
-        print('Error loading products by type: $e');
-      },
-    );
-  }
-
-  @override
-  void onClose() {
-    _productSubscription?.cancel();
-    super.onClose();
-  }
-}
-
-// Fixed WomenViewModel Controllers
-abstract class BaseCategoryController extends GetxController {
-  final RxList<WomenProduct> WomenProducts = <WomenProduct>[].obs;
-  final RxBool isLoading = false.obs;
-  final RxString error = ''.obs;
-
-  late StreamSubscription<List<WomenProduct>>? _productSubscription;
-
-  String get categoryName;
-
-  @override
-  void onInit() {
-    super.onInit();
-    loadProducts();
-  }
-
-  void loadProducts() {
-    isLoading.value = true;
-    error.value = '';
-
-    // Cancel previous subscription if exists
-    _productSubscription?.cancel();
-
-    try {
-      if (categoryName.isEmpty) {
-        // Load all products if no specific category
-        _productSubscription = FirebaseProductService.getAllProducts().listen(
-              (products) {
-            WomenProducts.value = products;
-            isLoading.value = false;
-          },
-          onError: (e) {
-            error.value = 'Failed to load products: $e';
-            isLoading.value = false;
-            print('Error loading products: $e');
-          },
-        );
-      } else {
-        // Load products by specific type
-        _productSubscription = FirebaseProductService.getProductsByType(categoryName).listen(
-              (products) {
-            WomenProducts.value = products;
-            isLoading.value = false;
-          },
-          onError: (e) {
-            error.value = 'Failed to load $categoryName products: $e';
-            isLoading.value = false;
-            print('Error loading $categoryName products: $e');
-          },
-        );
-      }
-    } catch (e) {
-      error.value = 'Failed to load $categoryName products: $e';
-      isLoading.value = false;
-      print('Error in load$categoryName: $e');
-    }
-  }
-
-  void retryLoading() {
-    loadProducts();
-  }
-
-  @override
-  void onClose() {
-    _productSubscription?.cancel();
-    super.onClose();
-  }
-}
-
-// Updated Category Controllers
-class EthnicWearController extends BaseCategoryController {
-  @override
-  String get categoryName => 'kurta'; // Based on your Firebase data
-}
-
-class TopWearController extends BaseCategoryController {
-  @override
-  String get categoryName => 'top wear';
-}
-
-class BottomWearController extends BaseCategoryController {
-  @override
-  String get categoryName => 'bottom wear';
-}
-
-class JumpsuitsController extends BaseCategoryController {
-  @override
-  String get categoryName => 'jumpsuit';
-}
-
-class MaternityController extends BaseCategoryController {
-  @override
-  String get categoryName => 'maternity';
-}
-
-class SleepWearController extends BaseCategoryController {
-  @override
-  String get categoryName => 'sleepwear';
-}
-
-class WinterWearController extends BaseCategoryController {
-  @override
-  String get categoryName => 'winterwear';
-}
-
-class ActiveWearController extends BaseCategoryController {
-  @override
-  String get categoryName => 'activewear';
-}
-
-class InnerWearController extends BaseCategoryController {
-  @override
-  String get categoryName => 'innerwear';
-}
-
-// Universal Women Products Controller (for all categories)
-class WomenProductsController extends BaseCategoryController {
-  @override
-  String get categoryName => ''; // Empty means get all products
 }

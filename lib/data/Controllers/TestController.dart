@@ -3,7 +3,7 @@ import 'dart:async';
 import '../Services/FirebaseServices.dart';
 import '../model/Women/WomenModel.dart';
 
-class SimpleTestController extends GetxController {
+class TestController extends GetxController {
   final RxList<WomenProduct> WomenProducts = <WomenProduct>[].obs;
   final RxBool isLoading = false.obs;
   final RxString error = ''.obs;

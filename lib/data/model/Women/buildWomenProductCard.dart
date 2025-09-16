@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../model/Women/WomenModel.dart';
 
-// Fixed Product Card Widget with proper Firebase integration
 Widget buildWomenProductCard(WomenProduct womenProduct) {
   return GestureDetector(
     onTap: () {
-      // Navigate to product detail view showing variations of this product
       Get.toNamed('/product-detail', arguments: {
         'productName': womenProduct.name,
         'category': womenProduct.subcategory,
@@ -179,12 +177,35 @@ Widget buildWomenProductCard(WomenProduct womenProduct) {
   );
 }
 
-// FIXED: Helper function to build product image with proper Firebase URL handling
 Widget _buildProductImage(WomenProduct womenProduct) {
   String imageUrl = _getValidImageUrl(womenProduct);
 
-  // Debug: Print the image URL being used
-  print('Loading image for ${womenProduct.name}: $imageUrl');
+  // If no valid URL found, show placeholder
+  if (imageUrl.isEmpty) {
+    return Container(
+      color: Colors.grey[200],
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.image_outlined,
+              size: 40,
+              color: Colors.grey[400],
+            ),
+            SizedBox(height: 8),
+            Text(
+              'No Image',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   return Image.network(
     imageUrl,
@@ -217,22 +238,16 @@ Widget _buildProductImage(WomenProduct womenProduct) {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                Icons.image_outlined,
+                Icons.broken_image,
                 size: 40,
                 color: Colors.grey[400],
               ),
               SizedBox(height: 8),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8),
-                child: Text(
-                  womenProduct.name,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+              Text(
+                'Image Error',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
                 ),
               ),
             ],
@@ -243,39 +258,32 @@ Widget _buildProductImage(WomenProduct womenProduct) {
   );
 }
 
-// FIXED: Helper function to get valid image URL
 String _getValidImageUrl(WomenProduct womenProduct) {
-  // Debug: Print available image sources
-  print('Getting image URL for ${womenProduct.name}:');
-  print('- imageUrls: ${womenProduct.imageUrls}');
-  print('- image: ${womenProduct.image}');
-
-  // First try to get from imageUrls array
+  // Check for Cloudinary URLs in imageUrls array
   if (womenProduct.imageUrls != null && womenProduct.imageUrls!.isNotEmpty) {
     for (String url in womenProduct.imageUrls!) {
-      if (url.isNotEmpty &&
-          (url.startsWith('http://') || url.startsWith('https://'))) {
-        print('Using imageUrls[0]: $url');
+      if (url.isNotEmpty && url.contains('cloudinary.com')) {
+        return url;
+      }
+      if (url.isNotEmpty && (url.startsWith('http://') || url.startsWith('https://'))) {
         return url;
       }
     }
   }
 
-  // Fallback to the main image property
-  if (womenProduct.image.isNotEmpty &&
-      (womenProduct.image.startsWith('http://') ||
-          womenProduct.image.startsWith('https://'))) {
-    print('Using main image: ${womenProduct.image}');
-    return womenProduct.image;
+  // Check main image field for Cloudinary URL
+  if (womenProduct.image.isNotEmpty) {
+    if (womenProduct.image.contains('cloudinary.com')) {
+      return womenProduct.image;
+    }
+    if (womenProduct.image.startsWith('http://') || womenProduct.image.startsWith('https://')) {
+      return womenProduct.image;
+    }
   }
 
-  // If no valid URL found, return a placeholder
-  String placeholder = 'https://via.placeholder.com/300x400/f0f0f0/cccccc?text=${Uri.encodeComponent(womenProduct.name)}';
-  print('Using placeholder: $placeholder');
-  return placeholder;
+  return '';
 }
 
-// Helper function to get gender-based color
 Color _getGenderColor(String gender) {
   switch (gender.toLowerCase()) {
     case 'women':
