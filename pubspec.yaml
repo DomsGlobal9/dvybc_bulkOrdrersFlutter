@@ -39,6 +39,7 @@ flutter:
     - assets/images/
     - assets/images/categories/
     - assets/images/categories/women/
+    - assets/images/subcategories/ethnic/
     - assets/tabview/
     - assets/fonts/
 

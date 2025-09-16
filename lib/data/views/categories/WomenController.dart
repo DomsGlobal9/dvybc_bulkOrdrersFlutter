@@ -33,8 +33,70 @@ class WomenController extends GetxController {
   }
 }
 
+// Static Category Data Model
+class CategoryData {
+  final String name;
+  final String assetImage;
+  final String productType;
+
+  CategoryData({
+    required this.name,
+    required this.assetImage,
+    required this.productType,
+  });
+}
+
 class WomenScreen extends StatelessWidget {
   final WomenController controller = Get.put(WomenController());
+
+  // Static category data based on your requirements
+  final List<CategoryData> categories = [
+    CategoryData(
+      name: 'Ethnic wear',
+      assetImage: 'assets/images/categories/ethnic.png',
+      productType: 'kurta', // This matches your Firebase data
+    ),
+    CategoryData(
+      name: 'Top wear',
+      assetImage: 'assets/images/categories/topwear.png',
+      productType: 'top wear',
+    ),
+    CategoryData(
+      name: 'Bottom wear',
+      assetImage: 'assets/images/categories/bottom.png',
+      productType: 'bottom wear',
+    ),
+    CategoryData(
+      name: 'Jumpsuits',
+      assetImage: 'assets/images/categories/jumpsuit.png',
+      productType: 'jumpsuit',
+    ),
+    CategoryData(
+      name: 'Maternity',
+      assetImage: 'assets/images/categories/maternity.jpg',
+      productType: 'maternity',
+    ),
+    CategoryData(
+      name: 'Sleep wear',
+      assetImage: 'assets/images/categories/sleepwear.png',
+      productType: 'sleepwear',
+    ),
+    CategoryData(
+      name: 'Winter wear',
+      assetImage: 'assets/images/categories/winterwear.png',
+      productType: 'winterwear',
+    ),
+    CategoryData(
+      name: 'Active wear',
+      assetImage: 'assets/images/categories/active.png',
+      productType: 'activewear',
+    ),
+    CategoryData(
+      name: 'Inner wear',
+      assetImage: 'assets/images/categories/inner.png',
+      productType: 'innerwear',
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -114,27 +176,22 @@ class WomenScreen extends StatelessWidget {
               ),
             ),
 
-            // Categories Grid
+            // Categories Grid - STATIC with asset images
             Padding(
               padding: EdgeInsets.all(16),
-              child: GridView.count(
-                crossAxisCount: 3,
+              child: GridView.builder(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 0.55,
+                ),
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 16,
-                childAspectRatio: 0.55,
-                children: [
-                  _buildCategoryCard('Ethnic wear', 'assets/images/categories/ethnic.png'),
-                  _buildCategoryCard('Top wear', 'assets/images/categories/topwear.png'),
-                  _buildCategoryCard('Bottom wear', 'assets/images/categories/bottom.png'),
-                  _buildCategoryCard('Jumpsuits', 'assets/images/categories/jumpsuit.png'),
-                  _buildCategoryCard('Maternity', 'assets/images/categories/maternity.jpg'),
-                  _buildCategoryCard('Sleep wear', 'assets/images/categories/sleepwear.png'),
-                  _buildCategoryCard('Winter wear', 'assets/images/categories/winterwear.png'),
-                  _buildCategoryCard('Active wear', 'assets/images/categories/active.png'),
-                  _buildCategoryCard('Inner wear', 'assets/images/categories/inner.png'),
-                ],
+                itemCount: categories.length,
+                itemBuilder: (context, index) {
+                  return _buildCategoryCard(categories[index]);
+                },
               ),
             ),
             SizedBox(height: 20), // Bottom padding
@@ -144,11 +201,13 @@ class WomenScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCategoryCard(String title, String imagePath) {
+  Widget _buildCategoryCard(CategoryData category) {
     return GestureDetector(
       onTap: () {
-        // Navigate to respective category screen
-        _navigateToCategory(title);
+        // Navigate to the subcategory view (the missing view you wanted)
+        Get.toNamed('/women-subcategory', arguments: {
+          'category': category.name, // Pass the main category name
+        });
       },
       child: Container(
         decoration: BoxDecoration(
@@ -168,7 +227,7 @@ class WomenScreen extends StatelessWidget {
               // Full image background
               Positioned.fill(
                 child: Image.asset(
-                  imagePath,
+                  category.assetImage,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
@@ -202,7 +261,7 @@ class WomenScreen extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    title,
+                    category.name,
                     textAlign: TextAlign.center,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -226,46 +285,5 @@ class WomenScreen extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  void _navigateToCategory(String categoryTitle) {
-    // Navigate based on category using route constants
-    switch (categoryTitle.toLowerCase()) {
-      case 'ethnic wear':
-        Get.toNamed('/ethnic-wear');
-        break;
-      case 'top wear':
-        Get.toNamed('/top-wear');
-        break;
-      case 'bottom wear':
-        Get.toNamed('/bottom-wear');
-        break;
-      case 'jumpsuits':
-        Get.toNamed('/jumpsuits');
-        break;
-      case 'maternity':
-        Get.toNamed('/maternity');
-        break;
-      case 'sleep wear':
-        Get.toNamed('/sleep-wear');
-        break;
-      case 'winter wear':
-        Get.toNamed('/winter-wear');
-        break;
-      case 'active wear':
-        Get.toNamed('/active-wear');
-        break;
-      case 'inner wear':
-        Get.toNamed('/inner-wear');
-        break;
-      default:
-        Get.snackbar(
-          'Coming Soon',
-          '$categoryTitle section will be available soon!',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.black87,
-          colorText: Colors.white,
-        );
-    }
   }
 }

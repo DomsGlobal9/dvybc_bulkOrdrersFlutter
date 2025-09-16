@@ -181,24 +181,24 @@ class FirebaseProductService {
       }
 
       // Extract image URLs
-      List<String> imageUrls = [];
-      if (data['imageUrls'] is List) {
-        imageUrls = List<String>.from(data['imageUrls']);
+      List<String> imageURLs = [];
+      if (data['imageURLs'] is List) {
+        imageURLs = List<String>.from(data['imageURLs']);
       }
 
       return WomenProduct(
         id: doc.id,
         name: data['productName'] ?? 'Unknown Product',
-        image: imageUrls.isNotEmpty ? imageUrls.first : '',
+        image: imageURLs.isNotEmpty ? imageURLs.first : '',
         category: data['productType'] ?? 'unknown',
         description: _generateDescription(data['productName'], data['productType']),
         gender: data['gender'] ?? 'Women',
         subcategory: data['productType'] ?? 'unknown',
-        imageUrls: imageUrls,
+        imageUrls: imageURLs,
         productId: data['productId'],
         productSize: data['productSize'],
         //price: data['price'],
-        totalImages: data['totalImages'] ?? imageUrls.length,
+        totalImages: data['totalImages'] ?? imageURLs.length,
         userId: data['userId'],
         userName: data['userName'],
         isActive: data['isActive'] ?? true,

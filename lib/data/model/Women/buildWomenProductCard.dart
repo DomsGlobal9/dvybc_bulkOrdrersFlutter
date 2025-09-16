@@ -179,9 +179,12 @@ Widget buildWomenProductCard(WomenProduct womenProduct) {
   );
 }
 
-// Helper function to build product image with proper Firebase URL handling
+// FIXED: Helper function to build product image with proper Firebase URL handling
 Widget _buildProductImage(WomenProduct womenProduct) {
   String imageUrl = _getValidImageUrl(womenProduct);
+
+  // Debug: Print the image URL being used
+  print('Loading image for ${womenProduct.name}: $imageUrl');
 
   return Image.network(
     imageUrl,
@@ -206,6 +209,7 @@ Widget _buildProductImage(WomenProduct womenProduct) {
     },
     errorBuilder: (context, error, stackTrace) {
       print('Image loading error for ${womenProduct.name}: $error');
+      print('Failed URL: $imageUrl');
       return Container(
         color: Colors.grey[200],
         child: Center(
@@ -239,21 +243,36 @@ Widget _buildProductImage(WomenProduct womenProduct) {
   );
 }
 
-// Helper function to get valid image URL
+// FIXED: Helper function to get valid image URL
 String _getValidImageUrl(WomenProduct womenProduct) {
+  // Debug: Print available image sources
+  print('Getting image URL for ${womenProduct.name}:');
+  print('- imageUrls: ${womenProduct.imageUrls}');
+  print('- image: ${womenProduct.image}');
+
   // First try to get from imageUrls array
   if (womenProduct.imageUrls != null && womenProduct.imageUrls!.isNotEmpty) {
-    return womenProduct.imageUrls!.first;
+    for (String url in womenProduct.imageUrls!) {
+      if (url.isNotEmpty &&
+          (url.startsWith('http://') || url.startsWith('https://'))) {
+        print('Using imageUrls[0]: $url');
+        return url;
+      }
+    }
   }
 
   // Fallback to the main image property
   if (womenProduct.image.isNotEmpty &&
-      !womenProduct.image.startsWith('assets/')) {
+      (womenProduct.image.startsWith('http://') ||
+          womenProduct.image.startsWith('https://'))) {
+    print('Using main image: ${womenProduct.image}');
     return womenProduct.image;
   }
 
-  // If it's an asset image or empty, return a placeholder
-  return 'https://via.placeholder.com/300x400/f0f0f0/cccccc?text=${Uri.encodeComponent(womenProduct.name)}';
+  // If no valid URL found, return a placeholder
+  String placeholder = 'https://via.placeholder.com/300x400/f0f0f0/cccccc?text=${Uri.encodeComponent(womenProduct.name)}';
+  print('Using placeholder: $placeholder');
+  return placeholder;
 }
 
 // Helper function to get gender-based color

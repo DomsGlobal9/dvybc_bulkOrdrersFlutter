@@ -22,8 +22,10 @@ import '../views/auth/loginView.dart';
 import '../views/auth/register.dart';
 import '../views/categories/WomenWear/SingleProductDeatilView.dart';
 import '../views/categories/WomenWear/WProductDetailView.dart';
+import '../views/categories/WomenWear/WomenSubcategoryView.dart';
 import '../views/categories/WomenWear/womencat.dart';
 import '../views/categories/kidscat.dart' hide InfantsView;
+import '../views/categories/womenScreen.dart' hide EthnicWearView;
 import '../views/tabview/tabviews.dart';
 import '../Cart/CartController.dart';
 import '../Cart/CartView.dart';
@@ -85,19 +87,17 @@ class AppRoutes {
       transition: Transition.fadeIn,
       transitionDuration: Duration(milliseconds: 300),
       binding: BindingsBuilder(() {
-        // Clear all controllers on splash
         _clearAllControllers();
       }),
     ),
 
-    // Authentication routes with proper cleanup
+    // Authentication routes
     GetPage(
       name: login,
       page: () => LoginScreen(),
       transition: Transition.fadeIn,
       transitionDuration: Duration(milliseconds: 300),
       binding: BindingsBuilder(() {
-        // Clear auth controllers and reinitialize login
         _clearAuthControllers();
       }),
     ),
@@ -116,19 +116,17 @@ class AppRoutes {
       transition: Transition.fade,
       transitionDuration: Duration(milliseconds: 300),
       binding: BindingsBuilder(() {
-        // Clear auth controllers before registration
         _clearAuthControllers();
       }),
     ),
 
-    // Main app routes with proper bindings
+    // Main app routes
     GetPage(
       name: home,
       page: () => CustomTabView(),
       transition: Transition.fade,
       transitionDuration: Duration(milliseconds: 300),
       binding: BindingsBuilder(() {
-        // Clear auth controllers and ensure app controllers are available
         _clearAuthControllers();
         _initializeAppControllers();
       }),
@@ -218,61 +216,22 @@ class AppRoutes {
       transitionDuration: Duration(milliseconds: 300),
     ),
 
-    // Women's category routes
+    // Women's subcategory route (the missing view you needed)
+    GetPage(
+      name: '/women-subcategory',
+      page: () => const WomenSubcategoryView(),
+      transition: Transition.fade,
+      transitionDuration: Duration(milliseconds: 300),
+    ),
+
+    // Women's individual category routes - these are now backup routes
     GetPage(
       name: ethnicWear,
-      page: () => const EthnicWearView(),
+      page: () => const  EthnicWearView(),
       transition: Transition.fade,
       transitionDuration: Duration(milliseconds: 300),
     ),
-    GetPage(
-      name: topWear,
-      page: () => const TopWearView(),
-      transition: Transition.fade,
-      transitionDuration: Duration(milliseconds: 300),
-    ),
-    GetPage(
-      name: bottomWear,
-      page: () => const BottomWearView(),
-      transition: Transition.fade,
-      transitionDuration: Duration(milliseconds: 300),
-    ),
-    GetPage(
-      name: jumpsuits,
-      page: () => const JumpsuitsView(),
-      transition: Transition.fade,
-      transitionDuration: Duration(milliseconds: 300),
-    ),
-    GetPage(
-      name: maternity,
-      page: () => const MaternityView(),
-      transition: Transition.fade,
-      transitionDuration: Duration(milliseconds: 300),
-    ),
-    GetPage(
-      name: sleepWear,
-      page: () => const SleepWearView(),
-      transition: Transition.fade,
-      transitionDuration: Duration(milliseconds: 300),
-    ),
-    GetPage(
-      name: winterWear,
-      page: () => const WinterWearView(),
-      transition: Transition.fade,
-      transitionDuration: Duration(milliseconds: 300),
-    ),
-    GetPage(
-      name: activeWear,
-      page: () => const ActiveWearView(),
-      transition: Transition.fade,
-      transitionDuration: Duration(milliseconds: 300),
-    ),
-    GetPage(
-      name: innerWear,
-      page: () => const InnerWearView(),
-      transition: Transition.fade,
-      transitionDuration: Duration(milliseconds: 300),
-    ),
+
 
     // Product detail routes
     GetPage(
@@ -305,7 +264,7 @@ class AppRoutes {
       transitionDuration: Duration(milliseconds: 300),
     ),
 
-    // Checkout routes with proper bindings
+    // Checkout routes
     GetPage(
       name: checkoutReview,
       page: () => CheckoutReviewView(),
@@ -331,11 +290,11 @@ class AppRoutes {
       }),
     ),
 
-    //Filters
+    // Filters
     GetPage(
       name: filter,
       page: () => FilterView(
-        category: Get.arguments['category'] ?? 'Women',
+        category: Get.arguments?['category'] ?? 'Women',
       ),
       transition: Transition.downToUp,
       transitionDuration: Duration(milliseconds: 300),
@@ -372,8 +331,12 @@ class AppRoutes {
 
   static void _clearAuthControllers() {
     try {
-      Get.delete<LoginController>(force: true);
-      Get.delete<RegisterController>(force: true);
+      if (Get.isRegistered<LoginController>()) {
+        Get.delete<LoginController>(force: true);
+      }
+      if (Get.isRegistered<RegisterController>()) {
+        Get.delete<RegisterController>(force: true);
+      }
       print('Auth controllers cleared successfully');
     } catch (e) {
       print('Error clearing auth controllers: $e');
@@ -394,44 +357,29 @@ class AppRoutes {
 
   // Helper method to navigate with complete controller cleanup
   static void navigateToAuth(String routeName) {
-    // Clear all existing controllers
     _clearAllControllers();
-
-    // Navigate to the route and clear navigation stack
     Get.offAllNamed(routeName);
   }
 
   // Helper method to navigate to main app with proper initialization
   static void navigateToHome() {
-    // Clear auth controllers
     _clearAuthControllers();
-
-    // Initialize app controllers
     _initializeAppControllers();
-
-    // Navigate to home and clear all previous routes
     Get.offAllNamed(home);
   }
 
   // Helper method for logout - clears everything and goes to login
   static void logout() {
-    // Clear all controllers
     _clearAllControllers();
-
-    // Clear any stored data if needed
     _clearStoredData();
-
-    // Navigate to login
     Get.offAllNamed(login);
   }
 
   static void _clearStoredData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      // Clear specific keys, not all preferences
       await prefs.remove('user_token');
       await prefs.remove('user_data');
-      // Add other keys you want to clear on logout
       print('Stored data cleared successfully');
     } catch (e) {
       print('Error clearing stored data: $e');

@@ -7,7 +7,7 @@ class WomenProduct {
   final String gender;
   final String subcategory;
 
-  // Additional Firebase fields
+  // Additional Firebase fields - Updated according to your Firebase structure
   final List<String>? imageUrls;
   final String? productId;
   final String? productSize;
@@ -18,7 +18,12 @@ class WomenProduct {
   final int? price;
   final String? design;
   final String? dressType;
+  final String? material;
+  final List<String>? selectedColors;
+  final List<String>? selectedSizes;
   final dynamic createdAt;
+  final dynamic timestamp;
+  final int? units;
 
   WomenProduct({
     required this.id,
@@ -38,37 +43,135 @@ class WomenProduct {
     this.isActive,
     this.design,
     this.dressType,
+    this.material,
+    this.selectedColors,
+    this.selectedSizes,
     this.createdAt,
+    this.timestamp,
+    this.units,
   });
 
   // Computed property for availability based on isActive
   bool get isAvailable => isActive ?? true;
 
+  // Get product name from available fields
+  String get displayName {
+    if (design != null && design!.isNotEmpty) {
+      return design!;
+    }
+    if (dressType != null && dressType!.isNotEmpty) {
+      return dressType!;
+    }
+    if (category.isNotEmpty) {
+      return category;
+    }
+    return 'Fashion Item';
+  }
+
+  // Computed MRP (mocked as 2x price for display)
+  int get mrp => (price ?? 0) * 2;
+
+  // Computed discount percentage (fixed 50% for now)
+  int get discountPercent => 50;
+
   // Factory constructor for creating from Firebase document
   factory WomenProduct.fromFirestore(Map<String, dynamic> data, String documentId) {
-    // Extract image URLs
+    // Extract image URLs - Firebase has 'imageURLs' (note the capital letters)
     List<String> imageUrls = [];
-    if (data['imageUrls'] is List) {
-      imageUrls = List<String>.from(data['imageUrls']);
+    if (data['imageURLs'] is List) {
+      List<dynamic> urls = data['imageURLs'];
+      imageUrls = urls.map((url) => url.toString()).toList();
+    }
+
+    // Extract selected colors
+    List<String> selectedColors = [];
+    if (data['selectedColors'] is List) {
+      selectedColors = List<String>.from(data['selectedColors']);
+    }
+
+    // Extract selected sizes
+    List<String> selectedSizes = [];
+    if (data['selectedSizes'] is List) {
+      selectedSizes = List<String>.from(data['selectedSizes']);
+    }
+
+    // Generate product name from available fields
+    String productName = _generateProductName(data);
+
+    // Handle price - Firebase stores as string "5000"
+    int? productPrice;
+    if (data['price'] != null) {
+      if (data['price'] is String) {
+        productPrice = int.tryParse(data['price']);
+      } else if (data['price'] is int) {
+        productPrice = data['price'];
+      }
     }
 
     return WomenProduct(
       id: documentId,
-      name: data['productName'] ?? 'Unknown Product',
-      image: imageUrls.isNotEmpty ? imageUrls.first : 'assets/images/placeholder.png',
-      category: data['productType'] ?? 'unknown',
-      description: _generateDescription(data['productName'], data['productType']),
-      gender: data['gender'] ?? 'Women',
-      subcategory: data['productType'] ?? 'ethnic',
+      name: productName,
+      image: imageUrls.isNotEmpty ? imageUrls.first : '',
+      category: data['category'] ?? 'Women',
+      description: _generateDescription(productName, data['category'], data['material']),
+      gender: data['category'] ?? 'Women',
+      subcategory: data['dressType'] ?? 'fashion',
       imageUrls: imageUrls,
-      productId: data['productId'],
-      productSize: data['productSize'],
-      totalImages: data['totalImages'] ?? imageUrls.length,
+      productId: documentId,
+      productSize: selectedSizes.isNotEmpty ? selectedSizes.first : null,
+      totalImages: imageUrls.length,
       userId: data['userId'],
       userName: data['userName'],
       isActive: data['isActive'] ?? true,
+      price: productPrice,
+      design: data['design'],
+      dressType: data['dressType'],
+      material: data['material'],
+      selectedColors: selectedColors,
+      selectedSizes: selectedSizes,
       createdAt: data['createdAt'],
+      timestamp: data['timestamp'],
+      units: data['units'],
     );
+  }
+
+  // Generate product name from available fields
+  static String _generateProductName(Map<String, dynamic> data) {
+    String name = '';
+
+    // Try to create a meaningful name from available fields
+    if (data['design'] != null && data['design'].toString().isNotEmpty) {
+      name += data['design'].toString();
+    }
+
+    if (data['dressType'] != null && data['dressType'].toString().isNotEmpty) {
+      if (name.isNotEmpty) name += ' ';
+      name += data['dressType'].toString();
+    }
+
+    if (data['material'] != null && data['material'].toString().isNotEmpty) {
+      if (name.isNotEmpty) name += ' ';
+      name += data['material'].toString();
+    }
+
+    // If no name could be generated, create a descriptive name
+    if (name.isEmpty) {
+      String category = data['category']?.toString() ?? 'Fashion';
+      String material = data['material']?.toString() ?? '';
+      String dressType = data['dressType']?.toString() ?? '';
+
+      if (material.isNotEmpty && dressType.isNotEmpty) {
+        name = '$material $dressType';
+      } else if (dressType.isNotEmpty) {
+        name = dressType;
+      } else if (material.isNotEmpty) {
+        name = '$material $category Item';
+      } else {
+        name = '$category Fashion Item';
+      }
+    }
+
+    return name;
   }
 
   // Convert to JSON for local storage or API calls
@@ -88,7 +191,15 @@ class WomenProduct {
       'userId': userId,
       'userName': userName,
       'isActive': isActive,
+      'price': price,
+      'design': design,
+      'dressType': dressType,
+      'material': material,
+      'selectedColors': selectedColors,
+      'selectedSizes': selectedSizes,
       'createdAt': createdAt,
+      'timestamp': timestamp,
+      'units': units,
     };
   }
 
@@ -108,7 +219,15 @@ class WomenProduct {
     String? userId,
     String? userName,
     bool? isActive,
+    int? price,
+    String? design,
+    String? dressType,
+    String? material,
+    List<String>? selectedColors,
+    List<String>? selectedSizes,
     dynamic createdAt,
+    dynamic timestamp,
+    int? units,
   }) {
     return WomenProduct(
       id: id ?? this.id,
@@ -125,38 +244,37 @@ class WomenProduct {
       userId: userId ?? this.userId,
       userName: userName ?? this.userName,
       isActive: isActive ?? this.isActive,
+      price: price ?? this.price,
+      design: design ?? this.design,
+      dressType: dressType ?? this.dressType,
+      material: material ?? this.material,
+      selectedColors: selectedColors ?? this.selectedColors,
+      selectedSizes: selectedSizes ?? this.selectedSizes,
       createdAt: createdAt ?? this.createdAt,
+      timestamp: timestamp ?? this.timestamp,
+      units: units ?? this.units,
     );
   }
 
-  // Generate description based on product name and type
-  static String _generateDescription(String? productName, String? productType) {
-    if (productName == null || productType == null) {
+  // Generate description based on available product data
+  static String _generateDescription(String? productName, String? category, String? material) {
+    if (productName == null) {
       return 'Beautiful fashion item for women';
     }
 
-    switch (productType.toLowerCase()) {
-      case 'kurta':
-        return 'Elegant $productName perfect for traditional occasions. Comfortable fit with beautiful design details.';
-      case 'saree':
-        return 'Stunning $productName that drapes beautifully. Perfect for special occasions and celebrations.';
-      case 'lehenga':
-        return 'Gorgeous $productName with intricate work. Ideal for weddings and festive occasions.';
-      case 'top wear':
-      case 'topwear':
-        return 'Stylish $productName that combines comfort with fashion. Perfect for daily wear.';
-      case 'bottom wear':
-      case 'bottomwear':
-        return 'Comfortable $productName with great fit and style. Essential for your wardrobe.';
-      case 'dress':
-        return 'Beautiful $productName that flatters your figure. Perfect for any occasion.';
-      case 'jacket':
-        return 'Stylish $productName to keep you warm and fashionable. Great for layering.';
-      case 'jumpsuit':
-        return 'Trendy $productName that offers comfort and style in one piece. Perfect for modern women.';
-      default:
-        return 'Beautiful $productName that combines style and comfort. A perfect addition to your wardrobe.';
+    String description = 'Stylish $productName';
+
+    if (material != null && material.isNotEmpty) {
+      description += ' made from premium $material';
     }
+
+    if (category != null && category.toLowerCase() == 'women') {
+      description += '. Perfect for modern women who value both comfort and style.';
+    } else {
+      description += '. A perfect addition to your wardrobe.';
+    }
+
+    return description;
   }
 
   @override
@@ -170,6 +288,6 @@ class WomenProduct {
 
   @override
   String toString() {
-    return 'WomenProduct(id: $id, name: $name, category: $category, gender: $gender, isAvailable: $isAvailable)';
+    return 'WomenProduct(id: $id, name: $name, category: $category, gender: $gender, price: $price, images: ${imageUrls?.length ?? 0})';
   }
 }
