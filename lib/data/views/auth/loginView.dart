@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../Services/GoogleSignInService.dart';
 import '../tabview/tabviews.dart';
 import 'register.dart' hide Padding;
 
@@ -256,18 +257,101 @@ class LoginController extends GetxController {
     Get.toNamed('/forgot-password');
   }
 
+  // Fixed Google Login Method
+  // Updated loginWithGoogle method for LoginController
+// Replace the existing method with this one
+
   void loginWithGoogle() async {
     if (_isDisposed) return;
 
     isLoading.value = true;
+    clearMessages();
+
     try {
-      successMessage.value = 'Google login coming soon!';
-      await Future.delayed(Duration(seconds: 2));
-      if (!_isDisposed) successMessage.value = null;
+      print('Starting Google login...');
+
+      final UserCredential? credential = await GoogleSignInService.signInWithGoogle();
+
+      if (credential?.user != null) {
+        print('Google login successful: ${credential!.user!.uid}');
+
+        // Check if user exists in our B2BBulkOrders_users collection
+        const String collectionName = 'B2BBulkOrders_users';
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection(collectionName)
+            .doc(credential.user!.uid)
+            .get();
+
+        if (!userDoc.exists) {
+          // User doesn't exist in our database - they need to register first
+          print('User not found in database - redirecting to register');
+
+          // Sign out the user since they're not registered
+          await GoogleSignInService.signOut();
+
+          if (!_isDisposed) {
+            emailError.value = 'Account not found. Please register first with Google.';
+          }
+          return;
+        }
+
+        // User exists - update their login info
+        await _updateGoogleUserData(credential.user!);
+
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isLoggedIn', true);
+
+        if (!_isDisposed) {
+          successMessage.value = 'Google login successful! Redirecting...';
+
+          await Future.delayed(Duration(seconds: 1));
+
+          emailController.clear();
+          passwordController.clear();
+          clearMessages();
+
+          Get.offAll(() => CustomTabView());
+        }
+      }
     } catch (e) {
       print('Google login error: $e');
+      _handleGoogleLoginError(e);
     } finally {
       if (!_isDisposed) isLoading.value = false;
+    }
+  }
+
+// Add this new method to LoginController
+  Future<void> _updateGoogleUserData(User user) async {
+    try {
+      const String collectionName = 'B2BBulkOrders_users';
+
+      await FirebaseFirestore.instance
+          .collection(collectionName)
+          .doc(user.uid)
+          .update({
+        'updatedAt': FieldValue.serverTimestamp(),
+        'signInMethod': 'google',
+      });
+
+      print('Google user login info updated');
+    } catch (e) {
+      print('Error updating user data: $e');
+      // Don't throw error for update failures - login should still work
+    }
+  }
+
+  void _handleGoogleLoginError(dynamic error) {
+    if (_isDisposed) return;
+
+    if (error.toString().contains('account-exists-with-different-credential')) {
+      emailError.value = 'This email is registered with a different sign-in method. Try email/password login.';
+    } else if (error.toString().contains('network-request-failed')) {
+      emailError.value = 'Network error. Check your connection';
+    } else if (error.toString().contains('sign_in_canceled')) {
+      return; // User canceled - no error needed
+    } else {
+      passwordError.value = 'Google login failed. Please try again';
     }
   }
 

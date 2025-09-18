@@ -16,6 +16,8 @@ import '../views/Offers/kurtasView.dart';
 import '../views/Offers/lehengaView.dart';
 import '../views/Offers/sherwanisView.dart';
 import '../views/Offers/OffersView.dart';
+import '../views/Profile/MyOrders/MyOrderController.dart';
+import '../views/Profile/MyOrders/MyOrderView.dart';
 import '../views/Profile/ProfileView.dart';
 import '../views/auth/forgotPasswordView.dart';
 import '../views/auth/loginView.dart';
@@ -78,6 +80,9 @@ class AppRoutes {
 
   //Filters
   static const filter = '/filter';
+
+  // My Order ROUTE
+  static const myOrders = '/my-orders';
 
   static final routes = [
     // Splash route
@@ -231,7 +236,54 @@ class AppRoutes {
       transition: Transition.fade,
       transitionDuration: Duration(milliseconds: 300),
     ),
-
+    // GetPage(
+    //   name: topWear,
+    //   page: () => TopWearView(),
+    //   transition: Transition.fade,
+    //   transitionDuration: Duration(milliseconds: 300),
+    // ),
+    // GetPage(
+    //   name: bottomWear,
+    //   page: () => BottomWearView(),
+    //   transition: Transition.fade,
+    //   transitionDuration: Duration(milliseconds: 300),
+    // ),
+    // GetPage(
+    //   name: jumpsuits,
+    //   page: () => JumpsuitsView(),
+    //   transition: Transition.fade,
+    //   transitionDuration: Duration(milliseconds: 300),
+    // ),
+    // GetPage(
+    //   name: maternity,
+    //   page: () => MaternityView(),
+    //   transition: Transition.fade,
+    //   transitionDuration: Duration(milliseconds: 300),
+    // ),
+    // GetPage(
+    //   name: sleepWear,
+    //   page: () => SleepWearView(),
+    //   transition: Transition.fade,
+    //   transitionDuration: Duration(milliseconds: 300),
+    // ),
+    // GetPage(
+    //   name: winterWear,
+    //   page: () => WinterWearView(),
+    //   transition: Transition.fade,
+    //   transitionDuration: Duration(milliseconds: 300),
+    // ),
+    // GetPage(
+    //   name: activeWear,
+    //   page: () => ActiveWearView(),
+    //   transition: Transition.fade,
+    //   transitionDuration: Duration(milliseconds: 300),
+    // ),
+    // GetPage(
+    //   name: innerWear,
+    //   page: () => InnerWearView(),
+    //   transition: Transition.fade,
+    //   transitionDuration: Duration(milliseconds: 300),
+    // ),
 
     // Product detail routes
     GetPage(
@@ -287,6 +339,15 @@ class AppRoutes {
       transitionDuration: Duration(milliseconds: 300),
       binding: BindingsBuilder(() {
         Get.lazyPut<CartController>(() => CartController(), fenix: true);
+      }),
+    ),
+    GetPage(
+      name: myOrders,
+      page: () => MyOrderView(),
+      transition: Transition.fade,
+      transitionDuration: Duration(milliseconds: 300),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<MyOrderController>(() => MyOrderController(), fenix: true);
       }),
     ),
 

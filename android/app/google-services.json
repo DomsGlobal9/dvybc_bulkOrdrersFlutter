@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "288498435019-45int97loldd1a38fhmea3v82mpe646v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bulkorder_dvybc.bulkorder_dvybc",
+            "certificate_hash": "ed5f9ae1718a114d4bd5f7b5a430f64cd21dbd20"
+          }
+        },
+        {
           "client_id": "288498435019-ptv32pgp03s404qi1po60hrapfjup19q.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -94,6 +102,14 @@
         }
       },
       "oauth_client": [
+        {
+          "client_id": "288498435019-netd5f7up9gcd3036qlbh79t0iv2p440.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dvybcb.flutter_dvybc",
+            "certificate_hash": "ed5f9ae1718a114d4bd5f7b5a430f64cd21dbd20"
+          }
+        },
         {
           "client_id": "288498435019-ptv32pgp03s404qi1po60hrapfjup19q.apps.googleusercontent.com",
           "client_type": 3

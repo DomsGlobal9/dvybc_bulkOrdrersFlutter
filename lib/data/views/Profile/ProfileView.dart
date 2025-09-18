@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'ProfileSettingsView.dart';
-import 'MyOrderView.dart';
+import 'MyOrders/MyOrderView.dart';
 import 'AboutView.dart';
 import 'SupportView.dart';
 
@@ -39,17 +39,14 @@ class ProfileViewForTab extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        'DVYB',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                          letterSpacing: 2,
-                        ),
+                      Image.asset(
+                        'assets/images/DVYBL.png',
+                        width: 80,
+                        height: 100,
+                        fit: BoxFit.contain,
                       ),
                     ],
-                  ),
+                  )
                 ),
 
                 // Profile Section with circular image and name

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../Services/GoogleSignInService.dart';
+import '../tabview/tabviews.dart';
 
 class RegisterController extends GetxController {
   final TextEditingController nameController = TextEditingController();
@@ -135,6 +138,102 @@ class RegisterController extends GetxController {
     }
   }
 
+// Replace your registerWithGoogle method in RegisterController with this:
+
+  Future<void> registerWithGoogle() async {
+    isLoading.value = true;
+    clearErrors();
+
+    try {
+      print('Starting Google registration...');
+
+      final UserCredential? credential = await GoogleSignInService.signInWithGoogle();
+
+      if (credential?.user != null) {
+        print('Google registration successful: ${credential!.user!.uid}');
+        print('User email: ${credential.user!.email}');
+
+        // Check if this is a new user or existing user using the service method
+        bool userExists = await GoogleSignInService.userExistsInDatabase(credential.user!.uid);
+
+        if (userExists) {
+          // Existing user - treat as login and navigate to main app
+          print('User already exists, logging them in directly');
+
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('isLoggedIn', true);
+
+          _clearForm();
+
+          // Navigate directly to main app
+          Get.offAll(() => CustomTabView());
+          return;
+        }
+
+        // New user - the GoogleSignInService already created the user profile
+        // Sign out after registration (as per your design)
+        await GoogleSignInService.signOut();
+        print('New user registered and signed out');
+
+        _clearForm();
+
+        // Navigate to success screen
+        Get.to(() => SuccessScreen());
+      } else {
+        throw Exception('Google registration failed - no credential returned');
+      }
+    } catch (e) {
+      print('Google registration error: $e');
+      _handleGoogleRegistrationError(e);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+// Remove the _storeGoogleUserData method as GoogleSignInService handles it now
+
+// Add this new method to RegisterController
+  Future<void> _storeGoogleUserData(User user) async {
+    const String collectionName = 'B2BBulkOrders_users';
+
+    final userData = {
+      'name': user.displayName ?? '',
+      'email': user.email ?? '',
+      'phone': user.phoneNumber ?? '',
+      'gender': '',
+      'dob': '',
+      'profileImageUrl': user.photoURL ?? '',
+      'uid': user.uid,
+      'signInMethod': 'google',
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+
+    try {
+      await FirebaseFirestore.instance
+          .collection(collectionName)
+          .doc(user.uid)
+          .set(userData);
+
+      print('Google user data stored in B2BBulkOrders_users collection');
+    } catch (e) {
+      print('Firestore error: $e');
+      throw Exception('Failed to save user data: $e');
+    }
+  }
+
+  void _handleGoogleRegistrationError(dynamic error) {
+    if (error.toString().contains('account-exists-with-different-credential')) {
+      passwordError.value = 'Account exists with different sign-in method. Try logging in instead.';
+    } else if (error.toString().contains('network-request-failed')) {
+      passwordError.value = 'Network error. Check your connection';
+    } else if (error.toString().contains('sign_in_canceled')) {
+      return; // User canceled - no error needed
+    } else {
+      passwordError.value = 'Google registration failed. Please try again';
+    }
+  }
+
   Future<void> _storeUserData(User user) async {
     const String collectionName = 'B2BBulkOrders_users';
 
@@ -146,6 +245,7 @@ class RegisterController extends GetxController {
       'dob': '',
       'profileImageUrl': '',
       'uid': user.uid,
+      'signInMethod': 'email',
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     };
@@ -511,9 +611,7 @@ class RegisterScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              onTap: () {
-                // Google registration logic
-              },
+              onTap: controller.registerWithGoogle,
             ),
             SizedBox(width: 25),
             _buildSocialButton(

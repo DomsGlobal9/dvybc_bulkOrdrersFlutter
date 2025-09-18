@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dvybc/data/routes/routes.dart';
 import 'package:get/get.dart';
 import '../Cart/CartController.dart';
+import '../views/Profile/MyOrders/MyOrderController.dart';
 import '../views/tabview/tabviews.dart';
 
 class CheckoutPaymentView extends StatefulWidget {
@@ -12,6 +13,9 @@ class CheckoutPaymentView extends StatefulWidget {
 class _CheckoutPaymentViewState extends State<CheckoutPaymentView> {
   int? selectedPaymentMethod = 0; // UPI is pre-selected
   final CartController cartController = Get.find<CartController>();
+
+  // Initialize MyOrderController
+  final MyOrderController orderController = Get.put(MyOrderController());
 
   @override
   Widget build(BuildContext context) {
@@ -478,6 +482,48 @@ class _CheckoutPaymentViewState extends State<CheckoutPaymentView> {
     Future.delayed(Duration(seconds: 2), () {
       try {
         Navigator.of(context).pop(); // Close processing dialog
+
+        // FIXED: Convert your CartItem structure to the format expected by MyOrderController
+        List<Map<String, dynamic>> orderItems = cartController.cartItems.map((cartItem) {
+          // Get image URL based on your CartItem structure
+          String imageUrl = '';
+
+          // For WomenProduct items
+          if (cartItem.womenProduct != null) {
+            if (cartItem.womenProduct!.imageUrls != null &&
+                cartItem.womenProduct!.imageUrls!.isNotEmpty) {
+              imageUrl = cartItem.womenProduct!.imageUrls!.first;
+            } else {
+              imageUrl = cartItem.womenProduct!.image;
+            }
+          }
+          // For regular Product items or if womenProduct is null
+          else {
+            imageUrl = cartItem.imagePath;
+          }
+
+          return {
+            'id': cartItem.id,                    // Using your CartItem.id
+            'name': cartItem.title,               // Using your CartItem.title
+            'imageUrl': imageUrl,                 // Proper image handling
+            'image': cartItem.imagePath,          // Using your CartItem.imagePath
+            'title': cartItem.title,              // Using your CartItem.title
+            'quantity': cartItem.quantity.value,  // Using your CartItem.quantity.value
+            'price': double.tryParse(cartItem.price.replaceAll('₹', '').replaceAll(',', '')) ?? 0.0,
+            'selectedSize': cartItem.selectedSize,
+            'selectedColor': cartItem.selectedColor?.value.toString(),
+            'category': cartItem.category,
+          };
+        }).toList();
+
+        // Add order to MyOrderController with correct field names
+        orderController.addOrderFromPayment(
+          totalAmount: cartController.finalTotal,
+          totalItems: cartController.totalItems,  // Using your existing totalItems getter
+          cartItems: orderItems,
+        );
+
+        // Clear cart after adding to orders
         cartController.clearCart();
 
         Get.dialog(
@@ -514,35 +560,55 @@ class _CheckoutPaymentViewState extends State<CheckoutPaymentView> {
               ],
             ),
             actions: [
-              Container(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    try {
-                      Get.back(); // Close success dialog
-                      Get.offAllNamed(AppRoutes.home, arguments: {'initialTab': 0});
-                    } catch (e) {
-                      print('Navigation error: $e');
-                      Get.snackbar('Error', 'Failed to navigate to home screen',
-                          snackPosition: SnackPosition.BOTTOM,
-                          backgroundColor: Colors.red,
-                          colorText: Colors.white);
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF094D77),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () {
+                        Get.back(); // Close success dialog
+                        // Navigate to My Orders to see the new order
+                        Get.offAllNamed(AppRoutes.myOrders);
+                      },
+                      child: Text(
+                        'View Orders',
+                        style: TextStyle(
+                          color: Color(0xFF094D77),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
-                  child: Text(
-                    'Continue Shopping',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        try {
+                          Get.back(); // Close success dialog
+                          Get.offAllNamed(AppRoutes.home, arguments: {'initialTab': 0});
+                        } catch (e) {
+                          print('Navigation error: $e');
+                          Get.snackbar('Error', 'Failed to navigate to home screen',
+                              snackPosition: SnackPosition.BOTTOM,
+                              backgroundColor: Colors.red,
+                              colorText: Colors.white);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFF094D77),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'Continue Shopping',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
             ],
           ),
