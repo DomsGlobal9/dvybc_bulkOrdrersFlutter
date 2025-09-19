@@ -102,10 +102,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                         IconButton(
                           icon: Icon(Icons.favorite_border, color: Colors.grey[600], size: 20),
                           onPressed: () {
-                            // Initialize FavoritesController if not already initialized
                             Get.put(FavoritesController());
-                            // Navigate to favorites screen
-                            Get.to(() => FavoritesView());
+                            // Navigate to favorites within tab structure
+                            final tabController = Get.find<TabControllerX>();
+                            tabController.navigateToFavorites(); // This keeps the tab bar visible
                           },
                           constraints: BoxConstraints(minWidth: 32),
                           padding: EdgeInsets.zero,

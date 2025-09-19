@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../Favorites/FavoritesView.dart';
 import '../Offers/OffersView.dart';
 import '../Profile/ProfileView.dart';
+import '../categories/WomenWear/WomenSubcategoryView.dart';
 import '../home/homeScreen.dart';
 import '../categories/WomenController.dart';
 import '../categories/menScreen.dart';
@@ -10,7 +12,14 @@ import '../../routes/routes.dart';
 
 class TabControllerX extends GetxController with GetTickerProviderStateMixin {
   var selectedIndex = 0.obs;
-  var selectedCategory = ''.obs; // Track selected category
+  var selectedCategory = ''.obs;
+
+  // Add variables to handle subcategory navigation
+  var showSubcategory = false.obs;
+  var selectedMainCategory = ''.obs;
+
+  // Add variables to handle favorites navigation
+  var showFavorites = false.obs;
 
   late List<AnimationController> tabControllers;
   late AnimationController scaleController;
@@ -50,6 +59,39 @@ class TabControllerX extends GetxController with GetTickerProviderStateMixin {
     if (category != null) {
       selectedCategory.value = category;
     }
+
+    // Reset subcategory and favorites view when switching tabs
+    if (index != 2) {
+      showSubcategory.value = false;
+      selectedMainCategory.value = '';
+    }
+    // Reset favorites when switching away from any tab
+    showFavorites.value = false;
+  }
+
+  // Method to navigate to subcategory within the tab
+  void navigateToSubcategory(String mainCategory) {
+    selectedMainCategory.value = mainCategory;
+    showSubcategory.value = true;
+    showFavorites.value = false; // Hide favorites if showing
+  }
+
+  // Method to go back to main categories
+  void backToMainCategories() {
+    showSubcategory.value = false;
+    selectedMainCategory.value = '';
+    showFavorites.value = false;
+  }
+
+  // Method to navigate to favorites within current tab
+  void navigateToFavorites() {
+    showFavorites.value = true;
+    showSubcategory.value = false; // Hide subcategory if showing
+  }
+
+  // Method to go back from favorites
+  void backFromFavorites() {
+    showFavorites.value = false;
   }
 
   @override
@@ -78,9 +120,45 @@ class CustomTabView extends StatelessWidget {
       body: IndexedStack(
         index: controller.selectedIndex.value,
         children: [
-          HomeScreen(),
-          Offersview(),
+          // Home Tab
           Obx(() {
+            if (controller.selectedIndex.value == 0 && controller.showFavorites.value) {
+              return FavoritesView(
+                onBackPressed: () => controller.backFromFavorites(),
+              );
+            }
+            return HomeScreen();
+          }),
+
+          // Offers Tab
+          Obx(() {
+            if (controller.selectedIndex.value == 1 && controller.showFavorites.value) {
+              return FavoritesView(
+                onBackPressed: () => controller.backFromFavorites(),
+              );
+            }
+            return Offersview();
+          }),
+
+          // Categories Tab with subcategory navigation
+          Obx(() {
+            // Show favorites if requested
+            if (controller.showFavorites.value) {
+              return FavoritesView(
+                onBackPressed: () => controller.backFromFavorites(),
+              );
+            }
+
+            // Check if we should show subcategory view
+            if (controller.showSubcategory.value &&
+                controller.selectedMainCategory.value.isNotEmpty) {
+              return WomenSubcategoryView(
+                mainCategory: controller.selectedMainCategory.value,
+                onBackPressed: () => controller.backToMainCategories(),
+              );
+            }
+
+            // Otherwise show the main category selection
             switch (controller.selectedCategory.value) {
               case 'WOMEN':
                 return WomenScreen();
@@ -89,20 +167,19 @@ class CustomTabView extends StatelessWidget {
               case 'KIDS':
                 return KidsScreen();
               default:
-                return Scaffold(
-                  appBar: CustomAppBar(),
-                  body: SafeArea(
-                    child: Center(
-                      child: Text(
-                        'Categories View',
-                        style: TextStyle(fontSize: 24),
-                      ),
-                    ),
-                  ),
-                );
+                return WomenScreen();
             }
           }),
-          ProfileViewForTab(),
+
+          // Profile Tab
+          Obx(() {
+            if (controller.selectedIndex.value == 3 && controller.showFavorites.value) {
+              return FavoritesView(
+                onBackPressed: () => controller.backFromFavorites(),
+              );
+            }
+            return ProfileViewForTab();
+          }),
         ],
       ),
       bottomNavigationBar: Container(

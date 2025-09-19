@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../home/homeScreen.dart';
+import '../tabview/tabviews.dart';
 
 class WomenController extends GetxController {
   final RxInt currentPage = 0.obs;
@@ -54,7 +55,7 @@ class WomenScreen extends StatelessWidget {
     CategoryData(
       name: 'Ethnic wear',
       assetImage: 'assets/images/categories/ethnic.png',
-      productType: 'kurta', // This matches your Firebase data
+      productType: 'kurta',
     ),
     CategoryData(
       name: 'Top wear',
@@ -194,7 +195,7 @@ class WomenScreen extends StatelessWidget {
                 },
               ),
             ),
-            SizedBox(height: 20), // Bottom padding
+            SizedBox(height: 20),
           ],
         ),
       )),
@@ -204,10 +205,9 @@ class WomenScreen extends StatelessWidget {
   Widget _buildCategoryCard(CategoryData category) {
     return GestureDetector(
       onTap: () {
-        // Navigate to the subcategory view (the missing view you wanted)
-        Get.toNamed('/women-subcategory', arguments: {
-          'category': category.name, // Pass the main category name
-        });
+        // Use the tab controller to navigate instead of Get.toNamed
+        final tabController = Get.find<TabControllerX>();
+        tabController.navigateToSubcategory(category.name);
       },
       child: Container(
         decoration: BoxDecoration(

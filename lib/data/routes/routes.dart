@@ -224,7 +224,10 @@ class AppRoutes {
     // Women's subcategory route (the missing view you needed)
     GetPage(
       name: '/women-subcategory',
-      page: () => const WomenSubcategoryView(),
+      page: () => WomenSubcategoryView(
+        mainCategory: Get.arguments?['category'] ?? 'Ethnic wear',
+        onBackPressed: null, // Since this is a separate route, no callback needed
+      ),
       transition: Transition.fade,
       transitionDuration: Duration(milliseconds: 300),
     ),

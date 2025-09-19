@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dvybc/data/views/Profile/ProfileView.dart';
 import 'package:get/get.dart';
 import 'package:firebase_core/firebase_core.dart';
 
@@ -47,3 +48,29 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+// class MyApp extends StatelessWidget {
+//   @override
+//   Widget build(BuildContext context) {
+//     return GetMaterialApp(
+//       title: 'DVYB',
+//       debugShowCheckedModeBanner: false,
+//       theme: ThemeData(
+//         primarySwatch: Colors.blue,
+//         visualDensity: VisualDensity.adaptivePlatformDensity,
+//       ),
+//       // Set initial route to splash screen
+//       initialRoute: '/profile',
+//       getPages: [
+//         // Add splash route
+//         GetPage(
+//           name: '/profile',
+//           page: () => ProfileView(),
+//           transition: Transition.fade,
+//         ),
+//         // Add all your existing routes
+//         ...AppRoutes.routes,
+//       ],
+//     );
+//   }
+// }

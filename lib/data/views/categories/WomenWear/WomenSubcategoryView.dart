@@ -85,17 +85,22 @@ final Map<String, List<SubcategoryData>> subcategoryData = {
 };
 
 class WomenSubcategoryView extends StatelessWidget {
-  const WomenSubcategoryView({Key? key}) : super(key: key);
+  final String mainCategory;
+  final VoidCallback? onBackPressed;
+
+  const WomenSubcategoryView({
+    Key? key,
+    required this.mainCategory,
+    this.onBackPressed,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Get the category from arguments
-    final String mainCategory = Get.arguments['category'] ?? 'Ethnic wear';
     final List<SubcategoryData> subcategories = subcategoryData[mainCategory] ?? [];
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      appBar: _buildCustomAppBar(mainCategory),
+      appBar: _buildCustomAppBar(),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -151,7 +156,7 @@ class WomenSubcategoryView extends StatelessWidget {
     );
   }
 
-  PreferredSizeWidget _buildCustomAppBar(String mainCategory) {
+  PreferredSizeWidget _buildCustomAppBar() {
     return AppBar(
       elevation: 0,
       backgroundColor: Colors.white,
@@ -168,7 +173,14 @@ class WomenSubcategoryView extends StatelessWidget {
             size: 18,
           ),
         ),
-        onPressed: () => Get.back(),
+        onPressed: () {
+          // Use the callback or fallback to Get.back()
+          if (onBackPressed != null) {
+            onBackPressed!();
+          } else {
+            Get.back();
+          }
+        },
       ),
       title: Text(
         mainCategory,

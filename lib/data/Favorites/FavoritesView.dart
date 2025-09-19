@@ -5,7 +5,10 @@ import '../model/Women/WomenModel.dart';
 import 'FavoritesController.dart';
 
 class FavoritesView extends StatelessWidget {
+  final VoidCallback? onBackPressed;
   final FavoritesController controller = Get.find<FavoritesController>();
+
+  FavoritesView({this.onBackPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +30,12 @@ class FavoritesView extends StatelessWidget {
               size: 18,
             ),
           ),
-          onPressed: () => Get.back(),
+          onPressed: () {
+            // Use callback if provided, otherwise do nothing (stay in tabs)
+            if (onBackPressed != null) {
+              onBackPressed!();
+            }
+          },
         ),
         title: Text(
           'Favourites',
@@ -114,7 +122,12 @@ class FavoritesView extends StatelessWidget {
                 ),
                 SizedBox(height: 24),
                 ElevatedButton(
-                  onPressed: () => Get.back(),
+                  onPressed: () {
+                    // Go back to previous screen within tabs instead of Get.back()
+                    if (onBackPressed != null) {
+                      onBackPressed!();
+                    }
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF1976D2),
                     shape: RoundedRectangleBorder(
