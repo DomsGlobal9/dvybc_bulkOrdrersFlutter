@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../Cart/CheckoutAddressView.dart';
 import '../Cart/CheckoutPaymentView.dart';
@@ -7,6 +6,7 @@ import '../Cart/CheckoutReviewView.dart';
 import '../Favorites/FavoritesView.dart';
 import '../Controllers/FilterController.dart';
 import '../Splash Screen/SplashScreen.dart';
+import '../TryOn/VirtualTryOnScreen.dart';
 import '../views/Filters/FilterView.dart';
 import '../views/Offers/BoysJacketsView.dart';
 import '../views/Offers/InfantsView.dart';
@@ -31,6 +31,7 @@ import '../views/categories/womenScreen.dart' hide EthnicWearView;
 import '../views/tabview/tabviews.dart';
 import '../Cart/CartController.dart';
 import '../Cart/CartView.dart';
+
 
 class AppRoutes {
   // Route constants
@@ -72,6 +73,9 @@ class AppRoutes {
   static const productDetail = '/product-detail';
   static const productSingle = '/product-single';
   static const cart = '/cart';
+
+  // Virtual Try-On route - ADD THIS
+  static const virtualTryOn = '/virtual-tryon';
 
   // Checkout routes
   static const checkoutReview = '/checkout-review';
@@ -239,54 +243,6 @@ class AppRoutes {
       transition: Transition.fade,
       transitionDuration: Duration(milliseconds: 300),
     ),
-    // GetPage(
-    //   name: topWear,
-    //   page: () => TopWearView(),
-    //   transition: Transition.fade,
-    //   transitionDuration: Duration(milliseconds: 300),
-    // ),
-    // GetPage(
-    //   name: bottomWear,
-    //   page: () => BottomWearView(),
-    //   transition: Transition.fade,
-    //   transitionDuration: Duration(milliseconds: 300),
-    // ),
-    // GetPage(
-    //   name: jumpsuits,
-    //   page: () => JumpsuitsView(),
-    //   transition: Transition.fade,
-    //   transitionDuration: Duration(milliseconds: 300),
-    // ),
-    // GetPage(
-    //   name: maternity,
-    //   page: () => MaternityView(),
-    //   transition: Transition.fade,
-    //   transitionDuration: Duration(milliseconds: 300),
-    // ),
-    // GetPage(
-    //   name: sleepWear,
-    //   page: () => SleepWearView(),
-    //   transition: Transition.fade,
-    //   transitionDuration: Duration(milliseconds: 300),
-    // ),
-    // GetPage(
-    //   name: winterWear,
-    //   page: () => WinterWearView(),
-    //   transition: Transition.fade,
-    //   transitionDuration: Duration(milliseconds: 300),
-    // ),
-    // GetPage(
-    //   name: activeWear,
-    //   page: () => ActiveWearView(),
-    //   transition: Transition.fade,
-    //   transitionDuration: Duration(milliseconds: 300),
-    // ),
-    // GetPage(
-    //   name: innerWear,
-    //   page: () => InnerWearView(),
-    //   transition: Transition.fade,
-    //   transitionDuration: Duration(milliseconds: 300),
-    // ),
 
     // Product detail routes
     GetPage(
@@ -298,6 +254,14 @@ class AppRoutes {
     GetPage(
       name: productSingle,
       page: () => const SingleProductView(),
+      transition: Transition.cupertino,
+      transitionDuration: Duration(milliseconds: 300),
+    ),
+
+    // Virtual Try-On route - ADD THIS
+    GetPage(
+      name: virtualTryOn,
+      page: () => const VirtualTryOnView(),
       transition: Transition.cupertino,
       transitionDuration: Duration(milliseconds: 300),
     ),

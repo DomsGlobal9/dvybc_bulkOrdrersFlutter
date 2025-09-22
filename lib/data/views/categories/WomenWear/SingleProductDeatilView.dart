@@ -86,9 +86,6 @@ class SingleProductView extends StatelessWidget {
 
                                     return Hero(
                                       tag: 'product-${product.id}-$index',
-                                      // ==========================================================
-                                      // FIX #1: Changed Image.asset to Image.network for the main image
-                                      // ==========================================================
                                       child: Image.network(
                                         imageUrl,
                                         fit: BoxFit.cover,
@@ -205,9 +202,6 @@ class SingleProductView extends StatelessWidget {
                                               : Border.all(color: Colors.grey[300]!, width: 1),
                                           borderRadius: BorderRadius.circular(8),
                                         ),
-                                        // ==========================================================
-                                        // FIX #2: Changed Image.asset to Image.network for thumbnails
-                                        // ==========================================================
                                         child: Image.network(
                                           product.imageUrls![index],
                                           fit: BoxFit.cover,
@@ -238,7 +232,7 @@ class SingleProductView extends StatelessWidget {
                                       border: Border.all(color: Color(0xFF187DBD), width: 2),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
-                                    child: Image.network( // Also changed here for consistency
+                                    child: Image.network(
                                       product.image,
                                       fit: BoxFit.cover,
                                       errorBuilder: (context, error, stackTrace) {
@@ -261,7 +255,6 @@ class SingleProductView extends StatelessWidget {
                 ),
               ),
 
-              // Rest of your existing UI remains the same...
               // Product Details in white container
               SliverToBoxAdapter(
                 child: Container(
@@ -275,7 +268,7 @@ class SingleProductView extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Product info with share button
+                      // Product info with share button and virtual try-on
                       Padding(
                         padding: EdgeInsets.all(20),
                         child: Column(
@@ -309,10 +302,58 @@ class SingleProductView extends StatelessWidget {
                                   ),
                                   child: IconButton(
                                     icon: Icon(Icons.share, color: Colors.black),
-                                    onPressed: () {},
+                                    onPressed: () {
+                                      // Your existing share functionality
+                                      Get.snackbar(
+                                        'Share',
+                                        'Share functionality to be implemented',
+                                        snackPosition: SnackPosition.BOTTOM,
+                                      );
+                                    },
                                   ),
                                 ),
                               ],
+                            ),
+                            SizedBox(height: 16),
+
+                            // Virtual Try-On Button - positioned right below share button area
+                            Container(
+                              width: double.infinity,
+                              height: 48,
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  String imageUrl = '';
+                                  if (product.imageUrls?.isNotEmpty == true) {
+                                    imageUrl = product.imageUrls!.first;
+                                  } else if (product.image.isNotEmpty) {
+                                    imageUrl = product.image;
+                                  }
+
+                                  if (imageUrl.isNotEmpty) {
+                                    Get.toNamed('/virtual-tryon', arguments: {
+                                      'garmentImageUrl': imageUrl,
+                                      'productName': product.name,
+                                    });
+                                  } else {
+                                    Get.snackbar(
+                                      'Image Not Available',
+                                      'No product image available for virtual try-on',
+                                      snackPosition: SnackPosition.BOTTOM,
+                                      backgroundColor: Colors.orange,
+                                      colorText: Colors.white,
+                                    );
+                                  }
+                                },
+                                icon: Icon(Icons.auto_fix_high, size: 20),
+                                label: Text('Virtual Try-On'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Color(0xFF187DBD),
+                                  side: BorderSide(color: Color(0xFF187DBD), width: 2),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
                             ),
                             SizedBox(height: 8),
 
@@ -439,7 +480,7 @@ class SingleProductView extends StatelessWidget {
                                             decoration: TextDecoration.none, // remove default underline
                                           ),
                                         ),
-                                        SizedBox(height: 2), // 👈 gap between text and underline
+                                        SizedBox(height: 2), // gap between text and underline
                                         Container(
                                           height: 1,
                                           width: 65, // match text width or use double.infinity
@@ -920,9 +961,6 @@ class SingleProductView extends StatelessWidget {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      // ==========================================================
-                      // FIX #3: Changed Image.asset to Image.network for similar products
-                      // ==========================================================
                       child: Image.network(
                         product.imageUrls?.isNotEmpty == true
                             ? product.imageUrls!.first

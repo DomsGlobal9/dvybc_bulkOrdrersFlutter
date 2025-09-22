@@ -75,7 +75,7 @@ class Offersview extends GetView<HomeController> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _buildProductCard(
-                    imagePath: 'assets/images/royalkaftan.png', // Assuming image name based on context
+                    imagePath: 'assets/images/categories/active.png', // Assuming image name based on context
                     name: 'Royal Wear Kaftan',
                     price: 3550,
                     originalPrice: 5750,
@@ -83,7 +83,7 @@ class Offersview extends GetView<HomeController> {
                     route: '/dresses',
                   ),
                   _buildProductCard(
-                    imagePath: 'assets/images/darkbluekurta.png', // Assuming image name based on context
+                    imagePath: 'assets/images/categories/ethnic.png', // Assuming image name based on context
                     name: 'Dark Blue Kurta',
                     price: 650,
                     originalPrice: 3250,

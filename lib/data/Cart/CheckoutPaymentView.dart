@@ -584,7 +584,7 @@ class _CheckoutPaymentViewState extends State<CheckoutPaymentView> {
                       onPressed: () {
                         try {
                           Get.back(); // Close success dialog
-                          Get.offAllNamed(AppRoutes.home, arguments: {'initialTab': 0});
+                          Get.offAllNamed('/home');
                         } catch (e) {
                           print('Navigation error: $e');
                           Get.snackbar('Error', 'Failed to navigate to home screen',

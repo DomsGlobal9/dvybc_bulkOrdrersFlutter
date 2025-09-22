@@ -848,7 +848,7 @@ class SuccessScreen extends StatelessWidget {
                       width: 180,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: () => Get.offNamed('/login'),
+                        onPressed: () => Get.offAllNamed('/login'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Color(0xFF1E5A96),
                           foregroundColor: Colors.white,
