@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../Widgets/CustomDVYBAppBarWithBack.dart';
+
 class SupportView extends StatelessWidget {
   const SupportView({Key? key}) : super(key: key);
 
@@ -8,41 +10,9 @@ class SupportView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: CustomDVYBAppBar(),
       body: Column(
         children: [
-          // Top header with gradient background and rounded bottom corners
-          Container(
-            width: double.infinity,
-            height: 120,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFF87CEEB), // Light sky blue
-                  Color(0xFFE6F3FF), // Very light blue
-                ],
-              ),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
-              ),
-            ),
-            child: SafeArea(
-              child: Center(
-                child: Text(
-                  'DVYB',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                    letterSpacing: 2,
-                  ),
-                ),
-              ),
-            ),
-          ),
-
           // Content section
           Expanded(
             child: SingleChildScrollView(

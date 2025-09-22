@@ -29,15 +29,21 @@ class AboutView extends StatelessWidget {
               ),
             ),
             child: SafeArea(
-              child: Center(
-                child: Text(
-                  'DVYB',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                    letterSpacing: 2,
-                  ),
+              child:  Center(
+                child: Image.asset(
+                  'assets/images/DVYBL.png', height: 90, width: 90,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    // Fallback if image is not found
+                    return Text(
+                      'DVYB',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    );
+                  },
                 ),
               ),
             ),

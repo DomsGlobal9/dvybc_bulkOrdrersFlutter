@@ -206,9 +206,7 @@ class ProfileViewForTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar:CustomDVYBAppBarWithBack(
-          showBackButton: false,
-        ),
+      appBar: CustomDVYBAppBar(),
       body: Stack(
         children: [
           // Background saree image positioned to the right
@@ -236,7 +234,7 @@ class ProfileViewForTab extends StatelessWidget {
                 padding: EdgeInsets.all(20), // Increased padding
                 child: Column(
                   children: [
-                    SizedBox(height: 30),
+                    SizedBox(height: 10),
 
                     // Profile Card with Firebase data - bigger size
                     Obx(() => Container(

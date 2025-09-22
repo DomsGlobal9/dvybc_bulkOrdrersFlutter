@@ -35,7 +35,7 @@ class _MyOrderViewState extends State<MyOrderView> with SingleTickerProviderStat
       body: Column(
         children: [
           // Header with circular back button and centered "My Orders"
-          SizedBox(height: 30,),
+          SizedBox(height: 10,),
           Container(
             color: Colors.white,
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),

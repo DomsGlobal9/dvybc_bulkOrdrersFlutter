@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../Widgets/CustomDVYBAppBarWithBack.dart';
+
 class ProfileSettingsController extends GetxController {
   final TextEditingController firstNameController = TextEditingController();
   final TextEditingController lastNameController = TextEditingController();
@@ -554,25 +556,7 @@ class ProfileSettingsView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFF7FCFF),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF2E2E2E), size: 20),
-          onPressed: () => Get.back(),
-        ),
-        title: const Text(
-          'DVYB',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF2E2E2E),
-            letterSpacing: 3,
-            fontFamily: 'Outfit',
-          ),
-        ),
-        centerTitle: true,
-      ),
+      appBar: CustomDVYBAppBar(),
       body: Obx(() {
         if (controller.isLoading.value) {
           return const Center(

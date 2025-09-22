@@ -11,34 +11,34 @@ class CustomDVYBAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: 88.2474136352539,
+      height: 120,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color(0xFF61C2FF), // #61C2FF
-            Color(0xFFFFFFFF), // #FFFFFF
+            Color(0xFF87CEEB), // Light sky blue
+            Color(0xFFE6F3FF), // Very light blue
           ],
         ),
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(16),
-          bottomRight: Radius.circular(16),
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(20),
         ),
       ),
       child: SafeArea(
-        child: Center(
+        child:  Center(
           child: Image.asset(
-            'assets/images/DVYBL.png',
-            height: 40,
-            fit: BoxFit.fill,
+            'assets/images/DVYBL.png', height: 90, width: 90,
+            fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) {
+              // Fallback if image is not found
               return Text(
                 'DVYB',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF2D3748),
+                  color: Colors.white,
                 ),
               );
             },
@@ -66,20 +66,20 @@ class CustomDVYBAppBarWithBack extends StatelessWidget implements PreferredSizeW
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 393,
-      height: 88.2474136352539,
+      width: double.infinity,
+      height: 120,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color(0xFF61C2FF), // #61C2FF
-            Color(0xFFFFFFFF), // #FFFFFF
+            Color(0xFF87CEEB), // Light sky blue
+            Color(0xFFE6F3FF), // Very light blue
           ],
         ),
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(16),
-          bottomRight: Radius.circular(16),
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(20),
         ),
       ),
       child: Padding(
@@ -109,7 +109,7 @@ class CustomDVYBAppBarWithBack extends StatelessWidget implements PreferredSizeW
               ),
               SizedBox(width: 16),
             ],
-            Expanded(
+            SafeArea(
               child: Center(
                 child: Image.asset(
                   'assets/images/DVYBL.png', height: 90, width: 90,

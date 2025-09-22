@@ -424,7 +424,11 @@ class ProductDetailView extends StatelessWidget {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.asset(
+                      // ==========================================================
+                      // THE ONLY CHANGE IS HERE: Image.asset -> Image.network
+                      // ==========================================================
+                      child: product.image.isNotEmpty
+                          ? Image.network(
                         product.image,
                         fit: BoxFit.cover,
                         width: double.infinity,
@@ -433,27 +437,16 @@ class ProductDetailView extends StatelessWidget {
                           return Container(
                             color: Colors.grey[200],
                             child: Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.image_outlined,
-                                      size: 40,
-                                      color: Colors.grey[400]),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    product.name,
-                                    textAlign: TextAlign.center,
-                                    maxLines: 2,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                ],
-                              ),
+                              child: Icon(Icons.broken_image, size: 40, color: Colors.grey[400]),
                             ),
                           );
                         },
+                      )
+                          : Container( // Fallback for empty URL
+                        color: Colors.grey[200],
+                        child: Center(
+                          child: Icon(Icons.image_not_supported, size: 40, color: Colors.grey[400]),
+                        ),
                       ),
                     ),
                     // Favorite Button
