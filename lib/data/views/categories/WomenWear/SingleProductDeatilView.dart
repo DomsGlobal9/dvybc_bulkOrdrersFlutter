@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../model/Women/WomenModel.dart';
 import '../../../viewModel/Women/SingleProductViewModel.dart';
+import '../../Widgets/ShareWidget.dart';
 
 class SingleProductView extends StatelessWidget {
   const SingleProductView({Key? key}) : super(key: key);
@@ -303,12 +304,8 @@ class SingleProductView extends StatelessWidget {
                                   child: IconButton(
                                     icon: Icon(Icons.share, color: Colors.black),
                                     onPressed: () {
-                                      // Your existing share functionality
-                                      Get.snackbar(
-                                        'Share',
-                                        'Share functionality to be implemented',
-                                        snackPosition: SnackPosition.BOTTOM,
-                                      );
+                                      ShareService.quickShareProduct(product);
+
                                     },
                                   ),
                                 ),
@@ -1113,8 +1110,6 @@ class SingleProductView extends StatelessWidget {
     );
   }
 }
-
-// Size Guide Modal remains the same as in your original code
 class SizeGuideModal extends StatefulWidget {
   @override
   _SizeGuideModalState createState() => _SizeGuideModalState();
@@ -1180,18 +1175,68 @@ class _SizeGuideModalState extends State<SizeGuideModal>
                     textAlign: TextAlign.center,
                   ),
                 ),
-                SizedBox(width: 48),
+                SizedBox(width: 48), // Balance the close button
               ],
             ),
           ),
+          // Product info
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset(
+                    'assets/images/measure.png',
+                    width: 60,
+                    height: 60,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 60,
+                        height: 60,
+                        color: Colors.grey[200],
+                        child: Icon(Icons.image_outlined, color: Colors.grey[400]),
+                      );
+                    },
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Yellow Kurti',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Brand Name • Everyday Comfort',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 20),
           // Tabs
           TabBar(
             controller: _tabController,
-            indicatorColor: Color(0xFF187DBD),
-            indicatorWeight: 2.0,
-            indicatorSize: TabBarIndicatorSize.tab,
-            labelColor: Color(0xFF187DBD),
-            unselectedLabelColor: Colors.grey[600],
+            indicatorColor: Color(0xFF187DBD),   // Color of the underline
+            indicatorWeight: 2.0,                 // Thickness of the underline
+            indicatorSize: TabBarIndicatorSize.tab,  // Make underline full tab width
+            labelColor: Color(0xFF187DBD),        // Selected label text color
+            unselectedLabelColor: Colors.grey[600],  // Unselected text color
             labelStyle: TextStyle(fontWeight: FontWeight.w600),
             tabs: [
               Tab(text: 'How to Measure'),
@@ -1218,6 +1263,7 @@ class _SizeGuideModalState extends State<SizeGuideModal>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Measurement diagram
           Container(
             width: double.infinity,
             height: 300,
@@ -1225,21 +1271,29 @@ class _SizeGuideModalState extends State<SizeGuideModal>
               color: Colors.grey[50],
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.straighten, size: 60, color: Colors.grey[400]),
-                  SizedBox(height: 8),
-                  Text(
-                    'Measurement Guide',
-                    style: TextStyle(color: Colors.grey[600]),
+            child: Image.asset(
+              'assets/images/measure.png',
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.straighten, size: 60, color: Colors.grey[400]),
+                      SizedBox(height: 8),
+                      Text(
+                        'Measurement Guide',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             ),
           ),
           SizedBox(height: 20),
+
+          // Measurement instructions
           Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -1260,6 +1314,42 @@ class _SizeGuideModalState extends State<SizeGuideModal>
                   ),
                 ),
               ],
+            ),
+          ),
+          SizedBox(height: 20),
+
+          // Measurement details
+          _buildMeasurementItem('Shoulders', 'Measure horizontally across the back from the tip of one shoulder to the other.'),
+          _buildMeasurementItem('Bust/Chest', 'Measure around the fullest part of your chest, keeping the tape measure parallel to the floor.'),
+          _buildMeasurementItem('Waist', 'Measure around your natural waistline, keeping the tape comfortably loose.'),
+          _buildMeasurementItem('Hips', 'With feet together, measure around the fullest part of your hips.'),
+          _buildMeasurementItem('Sleeve Length', 'Measure from the shoulder seam to the end of the wrist bone.'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMeasurementItem(String title, String description) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            description,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+              height: 1.4,
             ),
           ),
         ],
@@ -1283,7 +1373,7 @@ class _SizeGuideModalState extends State<SizeGuideModal>
           ),
           SizedBox(height: 8),
           Text(
-            'Find your perfect fit using the measurements below.',
+            'Find your perfect fit using the measurements below. All measurements are in ${isInches ? 'inches' : 'centimeters'}.',
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey[600],

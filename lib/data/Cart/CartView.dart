@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dvybc/data/views/home/homeScreen.dart';
 import 'package:get/get.dart';
 import 'CartController.dart';
 
@@ -9,94 +10,7 @@ class CartView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        leading: IconButton(
-          icon: Container(
-            padding: EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.arrow_back_ios,
-              color: Colors.black87,
-              size: 18,
-            ),
-          ),
-          onPressed: () => Get.back(),
-        ),
-        title: Text(
-          'Cart',
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          Obx(() => controller.cartItems.isNotEmpty
-              ? Row(
-            children: [
-              if (controller.cartItems.length > 1)
-                TextButton(
-                  onPressed: () {
-                    // Edit functionality
-                  },
-                  child: Text(
-                    'Edits',
-                    style: TextStyle(
-                      color: Color(0xFF094D77),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              TextButton(
-                onPressed: () {
-                  Get.dialog(
-                    AlertDialog(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      title: Text('Remove All'),
-                      content: Text('Do You Really Want to Remove All Items from Cart?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Get.back(),
-                          child: Text('Cancel'),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            controller.clearCart();
-                            Get.back();
-                          },
-                          child: Text(
-                            'Remove all',
-                            style: TextStyle(color: Colors.red),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                child: Text(
-                  'Remove all',
-                  style: TextStyle(
-                    color: Color(0xFF094D77),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ],
-          )
-              : SizedBox()),
-          SizedBox(width: 8),
-        ],
-      ),
+      appBar: CustomAppBar(),
       body: Obx(() {
         if (controller.cartItems.isEmpty) {
           return _buildEmptyCart();

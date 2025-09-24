@@ -24,6 +24,10 @@ dependencies:
   firebase_storage: ^11.6.0
   firebase_auth: ^4.16.0
   google_sign_in: ^7.2.0
+  
+  # Share dependency
+  share_plus: ^7.2.1
+  url_launcher: ^6.2.2
 
   # Image loading and caching for Firebase images
   cached_network_image: ^3.3.1
