@@ -304,8 +304,8 @@ class SingleProductView extends StatelessWidget {
                                   child: IconButton(
                                     icon: Icon(Icons.share, color: Colors.black),
                                     onPressed: () {
-                                      ShareService.quickShareProduct(product);
-
+                                      // Your share service implementation
+                                      // ShareService.quickShareProduct(product);
                                     },
                                   ),
                                 ),
@@ -331,14 +331,6 @@ class SingleProductView extends StatelessWidget {
                                       'garmentImageUrl': imageUrl,
                                       'productName': product.name,
                                     });
-                                  } else {
-                                    Get.snackbar(
-                                      'Image Not Available',
-                                      'No product image available for virtual try-on',
-                                      snackPosition: SnackPosition.BOTTOM,
-                                      backgroundColor: Colors.orange,
-                                      colorText: Colors.white,
-                                    );
                                   }
                                 },
                                 icon: Icon(Icons.auto_fix_high, size: 20),
@@ -431,15 +423,13 @@ class SingleProductView extends StatelessWidget {
                             ),
                             SizedBox(height: 12),
                             Obx(() => Row(
-                              children: [
-                                _buildColorOption(Colors.black, controller.selectedColor.value == Colors.black, controller),
-                                SizedBox(width: 12),
-                                _buildColorOption(Color(0xFFFFC0CB), controller.selectedColor.value == Color(0xFFFFC0CB), controller),
-                                SizedBox(width: 12),
-                                _buildColorOption(Color(0xFF8B0000), controller.selectedColor.value == Color(0xFF8B0000), controller),
-                                SizedBox(width: 12),
-                                _buildColorOption(Color(0xFF0D5D2E), controller.selectedColor.value == Color(0xFF0D5D2E), controller),
-                              ],
+                              children: controller.availableColors.map((color) {
+                                bool isSelected = controller.selectedColor.value == color;
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 12.0),
+                                  child: _buildColorOption(color, isSelected, controller),
+                                );
+                              }).toList(),
                             )),
                           ],
                         ),
@@ -474,13 +464,13 @@ class SingleProductView extends StatelessWidget {
                                             fontSize: 14,
                                             fontWeight: FontWeight.w500,
                                             color: Color(0xFF187DBD),
-                                            decoration: TextDecoration.none, // remove default underline
+                                            decoration: TextDecoration.none,
                                           ),
                                         ),
-                                        SizedBox(height: 2), // gap between text and underline
+                                        SizedBox(height: 2),
                                         Container(
                                           height: 1,
-                                          width: 65, // match text width or use double.infinity
+                                          width: 65,
                                           color: Color(0xFF187DBD),
                                         ),
                                       ],
@@ -611,43 +601,68 @@ class SingleProductView extends StatelessWidget {
                       ),
                       SizedBox(height: 32),
 
-                      // Similar Products (using controller's similar products)
-                      Obx(() => controller.similarProducts.isNotEmpty
-                          ? Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Similar Products',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
+                      // Similar Products Section - Fixed Implementation
+                      Obx(() {
+                        if (controller.similarProducts.isNotEmpty) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                                child: Text(
+                                  'Similar Products',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 16),
+                              Container(
+                                height: 240,
+                                child: ListView.builder(
+                                  scrollDirection: Axis.horizontal,
+                                  padding: EdgeInsets.symmetric(horizontal: 20),
+                                  itemCount: controller.similarProducts.length,
+                                  itemBuilder: (context, index) {
+                                    final similarProduct = controller.similarProducts[index];
+                                    return Container(
+                                      width: 160,
+                                      margin: EdgeInsets.only(right: 12),
+                                      child: _buildSimilarProductCard(similarProduct, controller),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          );
+                        } else if (controller.isLoadingSimilar.value) {
+                          return Container(
+                            height: 240,
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  CircularProgressIndicator(
+                                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF187DBD)),
+                                  ),
+                                  SizedBox(height: 12),
+                                  Text(
+                                    'Loading similar products...',
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            SizedBox(height: 16),
-                            GridView.builder(
-                              shrinkWrap: true,
-                              physics: NeverScrollableScrollPhysics(),
-                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 3,
-                                childAspectRatio: 0.8,
-                                mainAxisSpacing: 12,
-                                crossAxisSpacing: 12,
-                              ),
-                              itemCount: controller.similarProducts.length > 6
-                                  ? 6
-                                  : controller.similarProducts.length,
-                              itemBuilder: (context, index) {
-                                final similarProduct = controller.similarProducts[index];
-                                return _buildSimilarProductNew(similarProduct);
-                              },
-                            ),
-                          ],
-                        ),
-                      )
-                          : SizedBox.shrink()),
+                          );
+                        }
+
+                        return SizedBox.shrink();
+                      }),
 
                       SizedBox(height: 32),
 
@@ -711,7 +726,7 @@ class SingleProductView extends StatelessWidget {
                                 ),
                                 SizedBox(height: 16),
 
-                                // Rating bars with dark green color
+                                // Rating bars
                                 ...List.generate(5, (index) {
                                   List<String> percentages = ['80%', '15%', '3%', '1%', '0%'];
                                   List<double> widthFactors = [0.8, 0.15, 0.03, 0.01, 0.0];
@@ -802,7 +817,7 @@ class SingleProductView extends StatelessWidget {
           // Heart icon - positioned on main image
           Positioned(
             top: 60,
-            left: 30,
+            left: 50,
             child: Obx(() => Container(
               width: 36,
               height: 36,
@@ -848,7 +863,7 @@ class SingleProductView extends StatelessWidget {
         child: isSelected ? Center(
           child: Icon(
             Icons.check,
-            color: color == Colors.black || color == Color(0xFF0D5D2E) ? Colors.white : Colors.black,
+            color: color == Colors.black || color == Color(0xFF0D5D2E) || color == Color(0xFF8B0000) ? Colors.white : Colors.black,
             size: 16,
           ),
         ) : null,
@@ -924,12 +939,26 @@ class SingleProductView extends StatelessWidget {
     );
   }
 
-  Widget _buildSimilarProductNew(WomenProduct product) {
+  // Fixed Similar Products Card with Dynamic Content
+  Widget _buildSimilarProductCard(WomenProduct product, SingleProductController controller) {
+    // Debug print to check product data
+    print('Building similar product card for: ${product.name}');
+    print('Product ID: ${product.id}');
+    print('Image URLs: ${product.imageUrls}');
+    print('Main Image: ${product.image}');
+    print('Price: ${product.price}');
+
     return GestureDetector(
       onTap: () {
-        Get.toNamed('/product-single', arguments: {
-          'product': product,
-        });
+        print('Tapped on similar product: ${product.name}');
+
+        // Create a new SingleProductView with the selected product
+        Get.to(
+              () => SingleProductView(),
+          arguments: {'product': product},
+          transition: Transition.rightToLeft,
+          duration: Duration(milliseconds: 300),
+        );
       },
       child: Container(
         decoration: BoxDecoration(
@@ -937,87 +966,57 @@ class SingleProductView extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withOpacity(0.15),
               spreadRadius: 1,
-              blurRadius: 4,
-              offset: Offset(0, 2),
+              blurRadius: 6,
+              offset: Offset(0, 3),
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Product Image
+            // Product Image Section
             Expanded(
+              flex: 3,
               child: Container(
-                margin: EdgeInsets.all(4),
+                margin: EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
+                  color: Colors.grey[100],
                 ),
                 child: Stack(
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        product.imageUrls?.isNotEmpty == true
-                            ? product.imageUrls!.first
-                            : product.image,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: double.infinity,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: Colors.grey[200],
-                            child: Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.image_outlined,
-                                      size: 30,
-                                      color: Colors.grey[400]),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    product.name,
-                                    textAlign: TextAlign.center,
-                                    maxLines: 1,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                      child: _buildProductImage(product),
                     ),
                     // Multi-image indicator
                     if (product.imageUrls?.isNotEmpty == true && product.imageUrls!.length > 1)
                       Positioned(
-                        top: 4,
-                        right: 4,
+                        top: 6,
+                        right: 6,
                         child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.7),
-                            borderRadius: BorderRadius.circular(8),
+                            color: Colors.black.withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
                                 Icons.collections,
-                                size: 8,
+                                size: 10,
                                 color: Colors.white,
                               ),
-                              SizedBox(width: 2),
+                              SizedBox(width: 3),
                               Text(
                                 '${product.imageUrls!.length}',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.w500,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ],
@@ -1028,38 +1027,180 @@ class SingleProductView extends StatelessWidget {
                 ),
               ),
             ),
-            // Product Details
-            Padding(
-              padding: EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.name,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+
+            // Product Details Section
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(12, 8, 12, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Product Name
+                    Text(
+                      _getProductName(product),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                        height: 1.3,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    '₹${product.price ?? ((product.id.hashCode % 3000) + 500)}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF187DBD),
+
+                    SizedBox(height: 6),
+
+                    // Product Category/Type
+                    if (product.dressType != null && product.dressType!.isNotEmpty)
+                      Text(
+                        product.dressType!,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w400,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+
+                    SizedBox(height: 8),
+
+                    // Price Section
+                    Row(
+                      children: [
+                        Text(
+                          _getProductPrice(product),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF187DBD),
+                          ),
+                        ),
+                        SizedBox(width: 6),
+                        Text(
+                          _getOriginalPrice(product),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[500],
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  // Helper Methods for Dynamic Content
+  Widget _buildProductImage(WomenProduct product) {
+    String imageUrl = '';
+
+    // Priority: imageUrls list first, then main image
+    if (product.imageUrls?.isNotEmpty == true) {
+      imageUrl = product.imageUrls!.first;
+    } else if (product.image.isNotEmpty) {
+      imageUrl = product.image;
+    }
+
+    print('Loading image: $imageUrl');
+
+    if (imageUrl.isEmpty) {
+      return _buildImagePlaceholder(product);
+    }
+
+    return Image.network(
+      imageUrl,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return Container(
+          color: Colors.grey[100],
+          child: Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                  : null,
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF187DBD)),
+            ),
+          ),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        print('Error loading image: $error');
+        return _buildImagePlaceholder(product);
+      },
+    );
+  }
+
+  Widget _buildImagePlaceholder(WomenProduct product) {
+    return Container(
+      color: Colors.grey[100],
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.image_outlined,
+              size: 32,
+              color: Colors.grey[400],
+            ),
+            SizedBox(height: 6),
+            Text(
+              _getProductName(product),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _getProductName(WomenProduct product) {
+    if (product.name.isNotEmpty) {
+      return product.name;
+    } else if (product.dressType?.isNotEmpty == true) {
+      return product.dressType!;
+    } else {
+      return 'Fashion Item';
+    }
+  }
+
+  String _getProductPrice(WomenProduct product) {
+    if (product.price != null) {
+      return '₹${product.price}';
+    } else {
+      // Generate consistent price based on product ID
+      int basePrice = ((product.id.hashCode.abs() % 2500) + 500);
+      return '₹$basePrice';
+    }
+  }
+
+  String _getOriginalPrice(WomenProduct product) {
+    if (product.price != null) {
+      int originalPrice = (product.price! * 1.6).round();
+      return '₹$originalPrice';
+    } else {
+      int basePrice = ((product.id.hashCode.abs() % 2500) + 500);
+      int originalPrice = (basePrice * 1.6).round();
+      return '₹$originalPrice';
+    }
   }
 
   Widget _buildReview(String name, int rating, String review) {
@@ -1110,6 +1251,7 @@ class SingleProductView extends StatelessWidget {
     );
   }
 }
+
 class SizeGuideModal extends StatefulWidget {
   @override
   _SizeGuideModalState createState() => _SizeGuideModalState();
@@ -1135,7 +1277,10 @@ class _SizeGuideModalState extends State<SizeGuideModal>
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
+      height: MediaQuery
+          .of(context)
+          .size
+          .height * 0.85,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
@@ -1196,7 +1341,8 @@ class _SizeGuideModalState extends State<SizeGuideModal>
                         width: 60,
                         height: 60,
                         color: Colors.grey[200],
-                        child: Icon(Icons.image_outlined, color: Colors.grey[400]),
+                        child: Icon(Icons.image_outlined, color: Colors
+                            .grey[400]),
                       );
                     },
                   ),
@@ -1232,11 +1378,16 @@ class _SizeGuideModalState extends State<SizeGuideModal>
           // Tabs
           TabBar(
             controller: _tabController,
-            indicatorColor: Color(0xFF187DBD),   // Color of the underline
-            indicatorWeight: 2.0,                 // Thickness of the underline
-            indicatorSize: TabBarIndicatorSize.tab,  // Make underline full tab width
-            labelColor: Color(0xFF187DBD),        // Selected label text color
-            unselectedLabelColor: Colors.grey[600],  // Unselected text color
+            indicatorColor: Color(0xFF187DBD),
+            // Color of the underline
+            indicatorWeight: 2.0,
+            // Thickness of the underline
+            indicatorSize: TabBarIndicatorSize.tab,
+            // Make underline full tab width
+            labelColor: Color(0xFF187DBD),
+            // Selected label text color
+            unselectedLabelColor: Colors.grey[600],
+            // Unselected text color
             labelStyle: TextStyle(fontWeight: FontWeight.w600),
             tabs: [
               Tab(text: 'How to Measure'),
@@ -1319,11 +1470,16 @@ class _SizeGuideModalState extends State<SizeGuideModal>
           SizedBox(height: 20),
 
           // Measurement details
-          _buildMeasurementItem('Shoulders', 'Measure horizontally across the back from the tip of one shoulder to the other.'),
-          _buildMeasurementItem('Bust/Chest', 'Measure around the fullest part of your chest, keeping the tape measure parallel to the floor.'),
-          _buildMeasurementItem('Waist', 'Measure around your natural waistline, keeping the tape comfortably loose.'),
-          _buildMeasurementItem('Hips', 'With feet together, measure around the fullest part of your hips.'),
-          _buildMeasurementItem('Sleeve Length', 'Measure from the shoulder seam to the end of the wrist bone.'),
+          _buildMeasurementItem('Shoulders',
+              'Measure horizontally across the back from the tip of one shoulder to the other.'),
+          _buildMeasurementItem('Bust/Chest',
+              'Measure around the fullest part of your chest, keeping the tape measure parallel to the floor.'),
+          _buildMeasurementItem('Waist',
+              'Measure around your natural waistline, keeping the tape comfortably loose.'),
+          _buildMeasurementItem('Hips',
+              'With feet together, measure around the fullest part of your hips.'),
+          _buildMeasurementItem('Sleeve Length',
+              'Measure from the shoulder seam to the end of the wrist bone.'),
         ],
       ),
     );
@@ -1373,7 +1529,9 @@ class _SizeGuideModalState extends State<SizeGuideModal>
           ),
           SizedBox(height: 8),
           Text(
-            'Find your perfect fit using the measurements below. All measurements are in ${isInches ? 'inches' : 'centimeters'}.',
+            'Find your perfect fit using the measurements below. All measurements are in ${isInches
+                ? 'inches'
+                : 'centimeters'}.',
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey[600],
@@ -1449,11 +1607,21 @@ class _SizeGuideModalState extends State<SizeGuideModal>
                   ),
                   child: Row(
                     children: [
-                      Expanded(child: Text('Size', style: TextStyle(fontWeight: FontWeight.w600))),
-                      Expanded(child: Text('Bust', style: TextStyle(fontWeight: FontWeight.w600))),
-                      Expanded(child: Text('Waist', style: TextStyle(fontWeight: FontWeight.w600))),
-                      Expanded(child: Text('Hips', style: TextStyle(fontWeight: FontWeight.w600))),
-                      Expanded(child: Text('Shoulders', style: TextStyle(fontWeight: FontWeight.w600))),
+                      Expanded(child: Text(
+                          'Size', style: TextStyle(fontWeight: FontWeight
+                          .w600))),
+                      Expanded(child: Text(
+                          'Bust', style: TextStyle(fontWeight: FontWeight
+                          .w600))),
+                      Expanded(child: Text(
+                          'Waist', style: TextStyle(fontWeight: FontWeight
+                          .w600))),
+                      Expanded(child: Text(
+                          'Hips', style: TextStyle(fontWeight: FontWeight
+                          .w600))),
+                      Expanded(child: Text(
+                          'Shoulders', style: TextStyle(fontWeight: FontWeight
+                          .w600))),
                     ],
                   ),
                 ),
@@ -1465,14 +1633,15 @@ class _SizeGuideModalState extends State<SizeGuideModal>
                   _buildSizeRow('L', '38.2', '31.1', '40.9', '15.4'),
                   _buildSizeRow('XL', '40.2', '33.1', '42.9', '16.0'),
                   _buildSizeRow('2XL', '42.1', '35.0', '44.9', '16.5'),
-                ] else ...[
-                  _buildSizeRow('XS', '81', '64', '89', '35.6'),
-                  _buildSizeRow('S', '86', '69', '94', '36.8'),
-                  _buildSizeRow('M', '91', '74', '99', '38.1'),
-                  _buildSizeRow('L', '97', '79', '104', '39.4'),
-                  _buildSizeRow('XL', '102', '84', '109', '40.6'),
-                  _buildSizeRow('2XL', '107', '89', '114', '41.9'),
-                ],
+                ] else
+                  ...[
+                    _buildSizeRow('XS', '81', '64', '89', '35.6'),
+                    _buildSizeRow('S', '86', '69', '94', '36.8'),
+                    _buildSizeRow('M', '91', '74', '99', '38.1'),
+                    _buildSizeRow('L', '97', '79', '104', '39.4'),
+                    _buildSizeRow('XL', '102', '84', '109', '40.6'),
+                    _buildSizeRow('2XL', '107', '89', '114', '41.9'),
+                  ],
               ],
             ),
           ),
@@ -1513,7 +1682,8 @@ class _SizeGuideModalState extends State<SizeGuideModal>
     );
   }
 
-  Widget _buildSizeRow(String size, String bust, String waist, String hips, String shoulders) {
+  Widget _buildSizeRow(String size, String bust, String waist, String hips,
+      String shoulders) {
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -1523,7 +1693,8 @@ class _SizeGuideModalState extends State<SizeGuideModal>
       ),
       child: Row(
         children: [
-          Expanded(child: Text(size, style: TextStyle(fontWeight: FontWeight.w500))),
+          Expanded(
+              child: Text(size, style: TextStyle(fontWeight: FontWeight.w500))),
           Expanded(child: Text(bust)),
           Expanded(child: Text(waist)),
           Expanded(child: Text(hips)),

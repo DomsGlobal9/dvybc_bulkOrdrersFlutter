@@ -45,6 +45,14 @@ flutter:
     - assets/images/categories/
     - assets/images/categories/women/
     - assets/images/subcategories/ethnic/
+    - assets/images/subcategories/activewear/
+    - assets/images/subcategories/bottomwear/
+    - assets/images/subcategories/innerwear/
+    - assets/images/subcategories/jumpsuits/
+    - assets/images/subcategories/maternity/
+    - assets/images/subcategories/sleepwear/
+    - assets/images/subcategories/topwear/
+    - assets/images/subcategories/winterwear/
     - assets/tabview/
     - assets/fonts/
 

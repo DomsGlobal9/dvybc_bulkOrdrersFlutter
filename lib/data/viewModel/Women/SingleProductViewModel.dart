@@ -24,9 +24,7 @@ class SingleProductController extends GetxController {
   StreamSubscription<QuerySnapshot>? _similarProductsSubscription;
 
   // Get controller instances with lazy initialization
-  FavoritesController get _favoritesController =>
-      Get.put(FavoritesController());
-
+  FavoritesController get _favoritesController => Get.put(FavoritesController());
   CartController get _cartController => Get.put(CartController());
 
   // Available options - Updated to include 3XL and 4XL
@@ -54,12 +52,14 @@ class SingleProductController extends GetxController {
   void loadSimilarProducts(WomenProduct product) {
     isLoadingSimilar.value = true;
     error.value = '';
+    similarProducts.clear(); // Clear previous results
 
     // Cancel previous subscription if exists
     _similarProductsSubscription?.cancel();
 
     try {
       print('🔍 Loading similar products for: ${product.name}');
+      print('Current product dressType: ${product.dressType}');
 
       // Query similar products using collectionGroup from all users
       Query query = FirebaseFirestore.instance.collectionGroup('products');
@@ -67,10 +67,13 @@ class SingleProductController extends GetxController {
       // Filter by same dressType but exclude current product
       if (product.dressType != null && product.dressType!.isNotEmpty) {
         query = query.where('dressType', isEqualTo: product.dressType);
+      } else {
+        // Fallback: filter by category
+        query = query.where('category', isEqualTo: product.category);
       }
 
       _similarProductsSubscription = query
-          .limit(20) // Get more to filter out current product
+          .limit(15) // Get more to have options after filtering
           .snapshots()
           .listen(
             (QuerySnapshot snapshot) {
@@ -81,43 +84,175 @@ class SingleProductController extends GetxController {
           for (QueryDocumentSnapshot doc in snapshot.docs) {
             try {
               // Skip the current product
-              if (doc.id == product.id) continue;
+              if (doc.id == product.id) {
+                print('⏭️ Skipping current product: ${doc.id}');
+                continue;
+              }
 
               Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
               String userId = doc.reference.parent.parent!.id;
 
               WomenProduct? similarProduct = _mapDocumentToWomenProduct(doc, data, userId);
               if (similarProduct != null) {
-                similarList.add(similarProduct);
+                // Additional filtering for quality
+                if (similarProduct.name.isNotEmpty || (similarProduct.dressType?.isNotEmpty == true)) {
+                  similarList.add(similarProduct);
+                  print('✅ Added similar product: ${similarProduct.name}');
+                }
               }
             } catch (e) {
               print('❌ Error processing similar product ${doc.id}: $e');
             }
           }
 
-          // Limit to 8 similar products
+          // Shuffle for variety and limit to 8
+          similarList.shuffle();
           similarProducts.value = similarList.take(8).toList();
           isLoadingSimilar.value = false;
 
-          print('✅ Loaded ${similarProducts.length} similar products');
+          print('✅ Final similar products count: ${similarProducts.length}');
+
+          // If no similar products found after 3 seconds, try a broader search
+          if (similarProducts.isEmpty) {
+            print('🔄 No similar products found, trying broader search...');
+            Timer(Duration(seconds: 3), () {
+              if (similarProducts.isEmpty) {
+                _loadBroaderSimilarProducts(product);
+              }
+            });
+          }
         },
         onError: (e) {
-          error.value = 'Failed to load similar products: $e';
-          isLoadingSimilar.value = false;
           print('❌ Error loading similar products: $e');
+          isLoadingSimilar.value = false;
 
-          // Fallback to static similar products if Firebase fails
-          _generateFallbackSimilarProducts(product);
+          // Only show fallback products after a delay
+          Timer(Duration(seconds: 5), () {
+            if (similarProducts.isEmpty) {
+              _generateFallbackSimilarProducts(product);
+            }
+          });
         },
       );
     } catch (e) {
-      error.value = 'Failed to load similar products: $e';
-      isLoadingSimilar.value = false;
       print('❌ Exception in loadSimilarProducts: $e');
+      isLoadingSimilar.value = false;
 
-      // Fallback to static similar products
-      _generateFallbackSimilarProducts(product);
+      // Only show fallback products after a delay
+      Timer(Duration(seconds: 5), () {
+        if (similarProducts.isEmpty) {
+          _generateFallbackSimilarProducts(product);
+        }
+      });
     }
+  }
+
+  void _loadBroaderSimilarProducts(WomenProduct product) {
+    print('🔍 Loading broader similar products...');
+
+    // Broader search without specific dressType filter
+    Query query = FirebaseFirestore.instance.collectionGroup('products')
+        .where('category', isEqualTo: product.category)
+        .limit(10);
+
+    query.snapshots().listen((QuerySnapshot snapshot) {
+      List<WomenProduct> similarList = [];
+
+      for (QueryDocumentSnapshot doc in snapshot.docs) {
+        if (doc.id == product.id) continue;
+
+        try {
+          Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+          String userId = doc.reference.parent.parent!.id;
+
+          WomenProduct? similarProduct = _mapDocumentToWomenProduct(doc, data, userId);
+          if (similarProduct != null) {
+            similarList.add(similarProduct);
+          }
+        } catch (e) {
+          print('❌ Error in broader search: $e');
+        }
+      }
+
+      if (similarList.isNotEmpty) {
+        similarList.shuffle();
+        similarProducts.value = similarList.take(6).toList();
+        isLoadingSimilar.value = false;
+        print('🔍 Broader search found: ${similarProducts.length} products');
+      } else {
+        // Still no products found, generate fallback after delay
+        Timer(Duration(seconds: 3), () {
+          if (similarProducts.isEmpty) {
+            _generateFallbackSimilarProducts(product);
+          }
+        });
+      }
+    }, onError: (e) {
+      print('❌ Broader search error: $e');
+      Timer(Duration(seconds: 2), () {
+        if (similarProducts.isEmpty) {
+          _generateFallbackSimilarProducts(product);
+        }
+      });
+    });
+  }
+
+  void _generateFallbackSimilarProducts(WomenProduct product) {
+    print('📝 Generating fallback similar products...');
+
+    // Create some realistic fallback similar products based on the current product
+    List<WomenProduct> similar = [];
+
+    // Generate based on product type
+    List<String> similarNames = [];
+    List<String> similarTypes = [];
+
+    if (product.dressType != null) {
+      switch (product.dressType!.toLowerCase()) {
+        case 'kurti':
+        case 'kurta':
+          similarNames = ['Cotton Kurti', 'Silk Kurti', 'Designer Kurti', 'Printed Kurti', 'Embroidered Kurti'];
+          similarTypes = ['kurti', 'kurti', 'kurti', 'kurti', 'kurti'];
+          break;
+        case 'saree':
+          similarNames = ['Silk Saree', 'Cotton Saree', 'Designer Saree', 'Party Saree', 'Traditional Saree'];
+          similarTypes = ['saree', 'saree', 'saree', 'saree', 'saree'];
+          break;
+        case 'dress':
+          similarNames = ['Party Dress', 'Casual Dress', 'Formal Dress', 'Summer Dress', 'Evening Dress'];
+          similarTypes = ['dress', 'dress', 'dress', 'dress', 'dress'];
+          break;
+        case 'top':
+          similarNames = ['Casual Top', 'Designer Top', 'Cotton Top', 'Silk Top', 'Party Top'];
+          similarTypes = ['top', 'top', 'top', 'top', 'top'];
+          break;
+        default:
+          similarNames = ['Fashion Top', 'Designer Wear', 'Casual Wear', 'Party Wear', 'Traditional Wear'];
+          similarTypes = ['top', 'dress', 'kurti', 'saree', 'top'];
+      }
+    } else {
+      similarNames = ['Fashion Top', 'Designer Wear', 'Casual Wear', 'Party Wear', 'Traditional Wear'];
+      similarTypes = ['top', 'dress', 'kurti', 'saree', 'top'];
+    }
+
+    for (int i = 0; i < similarNames.length && i < 5; i++) {
+      similar.add(WomenProduct(
+        id: 'fallback_${i + 1}',
+        name: similarNames[i],
+        image: '', // Empty image will show placeholder
+        category: product.category,
+        description: 'Beautiful ${similarNames[i].toLowerCase()} with premium quality fabric and elegant design.',
+        gender: product.gender,
+        subcategory: product.subcategory,
+        dressType: similarTypes[i],
+        price: (800 + (i * 200)), // Generate different prices
+        imageUrls: [], // Empty list will show placeholder
+      ));
+    }
+
+    similarProducts.value = similar;
+    isLoadingSimilar.value = false;
+    print('✅ Generated ${similar.length} fallback products');
   }
 
   // Map Firestore document to WomenProduct
@@ -188,33 +323,6 @@ class SingleProductController extends GetxController {
     }
   }
 
-  void _generateFallbackSimilarProducts(WomenProduct product) {
-    // Create some fallback similar products
-    List<WomenProduct> similar = [
-      WomenProduct(
-        id: 'fallback_1',
-        name: 'Similar ${product.category}',
-        image: '',
-        category: product.category,
-        description: 'Similar product in ${product.category} category',
-        gender: product.gender,
-        subcategory: product.subcategory,
-      ),
-      WomenProduct(
-        id: 'fallback_2',
-        name: 'Related ${product.category}',
-        image: '',
-        category: product.category,
-        description: 'Related product in ${product.category} category',
-        gender: product.gender,
-        subcategory: product.subcategory,
-      ),
-    ];
-
-    similarProducts.value = similar;
-    isLoadingSimilar.value = false;
-  }
-
   void selectColor(Color color) {
     selectedColor.value = color;
   }
@@ -239,8 +347,7 @@ class SingleProductController extends GetxController {
       );
 
       // Update local state
-      isFavorite.value =
-          _favoritesController.isWomenProductFavorited(currentProduct.value!);
+      isFavorite.value = _favoritesController.isWomenProductFavorited(currentProduct.value!);
     }
   }
 
@@ -321,15 +428,8 @@ class SingleProductController extends GetxController {
 
   void buyNow() {
     // Validate selection for non-saree items
-    if (!currentProduct.value!.name.toLowerCase().contains('saree') &&
-        selectedSizes.isEmpty) {
-      Get.snackbar(
-        'Size Required',
-        'Please select a size before proceeding',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.orange,
-        colorText: Colors.white,
-      );
+    if (!currentProduct.value!.name.toLowerCase().contains('saree') && selectedSizes.isEmpty) {
+
       return;
     }
 
@@ -343,14 +443,7 @@ class SingleProductController extends GetxController {
       );
     }
 
-    Get.snackbar(
-      'Proceeding to Checkout',
-      'Taking you to checkout for ${currentProduct.value?.name}',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Color(0xFF3B82F6),
-      colorText: Colors.white,
-      duration: Duration(seconds: 2),
-    );
+
 
     // Navigate to cart/checkout
     Future.delayed(Duration(seconds: 1), () {
@@ -360,18 +453,15 @@ class SingleProductController extends GetxController {
 
   void retrySimilarProducts() {
     if (currentProduct.value != null) {
+      error.value = '';
       loadSimilarProducts(currentProduct.value!);
     }
   }
 
   String getRandomPrice() {
     // Generate random price based on product type
-    List<int> prices = [
-      299, 399, 499, 599, 699, 799, 899, 999,
-      1199, 1299, 1499, 1699, 1899, 2099, 2299
-    ];
-    return prices[currentProduct.value!.id.hashCode.abs() % prices.length]
-        .toString();
+    List<int> prices = [299, 399, 499, 599, 699, 799, 899, 999, 1199, 1299, 1499, 1699, 1899, 2099, 2299];
+    return prices[currentProduct.value!.id.hashCode.abs() % prices.length].toString();
   }
 
   String getRandomOriginalPrice() {
@@ -383,8 +473,7 @@ class SingleProductController extends GetxController {
   String getDiscount() {
     int currentPrice = int.parse(getRandomPrice());
     int originalPrice = int.parse(getRandomOriginalPrice());
-    int discount = (((originalPrice - currentPrice) / originalPrice) * 100)
-        .round();
+    int discount = (((originalPrice - currentPrice) / originalPrice) * 100).round();
     return discount.toString();
   }
 
@@ -708,14 +797,7 @@ class AddToCartModal extends StatelessWidget {
                       if (selectedSizesWithQuantities.isNotEmpty) {
                         onAddToCart(selectedSizesWithQuantities);
                         Navigator.pop(context);
-                      } else {
-                        Get.snackbar(
-                          'No Selection',
-                          'Please select at least one size with quantity',
-                          snackPosition: SnackPosition.BOTTOM,
-                          backgroundColor: Colors.orange,
-                          colorText: Colors.white,
-                        );
+
                       }
                     },
                     style: ElevatedButton.styleFrom(
