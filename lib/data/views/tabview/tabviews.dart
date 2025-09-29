@@ -10,26 +10,17 @@ import '../categories/menScreen.dart';
 import '../categories/kidsScreen.dart';
 import '../../routes/routes.dart';
 
+// CONTROLLER (No changes here)
 class TabControllerX extends GetxController with GetTickerProviderStateMixin {
   var selectedIndex = 0.obs;
   var selectedCategory = ''.obs;
 
-  // Add variables to handle subcategory navigation
   var showSubcategory = false.obs;
   var selectedMainCategory = ''.obs;
-
-  // Add variables to handle favorites navigation
   var showFavorites = false.obs;
 
   late List<AnimationController> tabControllers;
   late AnimationController scaleController;
-
-  final List<String> tabRoutes = [
-    AppRoutes.home,
-    AppRoutes.offers,
-    AppRoutes.categories,
-    AppRoutes.profile,
-  ];
 
   @override
   void onInit() {
@@ -42,7 +33,7 @@ class TabControllerX extends GetxController with GetTickerProviderStateMixin {
       4,
           (index) => AnimationController(
         vsync: this,
-        duration: Duration(milliseconds: 400),
+        duration: Duration(milliseconds: 300), // Adjusted duration
       ),
     );
     tabControllers[0].forward();
@@ -51,45 +42,41 @@ class TabControllerX extends GetxController with GetTickerProviderStateMixin {
   void onTabTapped(int index, {String? category}) {
     if (index == selectedIndex.value && category == null) return;
 
-    scaleController.forward().then((_) => scaleController.reverse());
+    // Animate the text out on the old tab
     tabControllers[selectedIndex.value].reverse();
     selectedIndex.value = index;
+    // Animate the text in on the new tab
     tabControllers[index].forward();
 
     if (category != null) {
       selectedCategory.value = category;
     }
 
-    // Reset subcategory and favorites view when switching tabs
     if (index != 2) {
       showSubcategory.value = false;
       selectedMainCategory.value = '';
     }
-    // Reset favorites when switching away from any tab
     showFavorites.value = false;
   }
 
-  // Method to navigate to subcategory within the tab
+  // Other controller methods...
   void navigateToSubcategory(String mainCategory) {
     selectedMainCategory.value = mainCategory;
     showSubcategory.value = true;
-    showFavorites.value = false; // Hide favorites if showing
+    showFavorites.value = false;
   }
 
-  // Method to go back to main categories
   void backToMainCategories() {
     showSubcategory.value = false;
     selectedMainCategory.value = '';
     showFavorites.value = false;
   }
 
-  // Method to navigate to favorites within current tab
   void navigateToFavorites() {
     showFavorites.value = true;
-    showSubcategory.value = false; // Hide subcategory if showing
+    showSubcategory.value = false;
   }
 
-  // Method to go back from favorites
   void backFromFavorites() {
     showFavorites.value = false;
   }
@@ -104,6 +91,8 @@ class TabControllerX extends GetxController with GetTickerProviderStateMixin {
   }
 }
 
+
+// UI VIEW (Rebuilt to match your picture)
 class CustomTabView extends StatelessWidget {
   final int initialTab;
   final controller = Get.put(TabControllerX());
@@ -120,63 +109,36 @@ class CustomTabView extends StatelessWidget {
       body: IndexedStack(
         index: controller.selectedIndex.value,
         children: [
-          // Home Tab
+          // Screen views...
           Obx(() {
             if (controller.selectedIndex.value == 0 && controller.showFavorites.value) {
-              return FavoritesView(
-                onBackPressed: () => controller.backFromFavorites(),
-              );
+              return FavoritesView(onBackPressed: () => controller.backFromFavorites());
             }
             return HomeScreen();
           }),
-
-          // Offers Tab
           Obx(() {
             if (controller.selectedIndex.value == 1 && controller.showFavorites.value) {
-              return FavoritesView(
-                onBackPressed: () => controller.backFromFavorites(),
-              );
+              return FavoritesView(onBackPressed: () => controller.backFromFavorites());
             }
             return Offersview();
           }),
-
-          // Categories Tab with subcategory navigation
           Obx(() {
-            // Show favorites if requested
             if (controller.showFavorites.value) {
-              return FavoritesView(
-                onBackPressed: () => controller.backFromFavorites(),
-              );
+              return FavoritesView(onBackPressed: () => controller.backFromFavorites());
             }
-
-            // Check if we should show subcategory view
-            if (controller.showSubcategory.value &&
-                controller.selectedMainCategory.value.isNotEmpty) {
-              return WomenSubcategoryView(
-                mainCategory: controller.selectedMainCategory.value,
-                onBackPressed: () => controller.backToMainCategories(),
-              );
+            if (controller.showSubcategory.value && controller.selectedMainCategory.value.isNotEmpty) {
+              return WomenSubcategoryView(mainCategory: controller.selectedMainCategory.value, onBackPressed: () => controller.backToMainCategories());
             }
-
-            // Otherwise show the main category selection
             switch (controller.selectedCategory.value) {
-              case 'WOMEN':
-                return WomenScreen();
-              case 'MEN':
-                return MenScreen();
-              case 'KIDS':
-                return KidsScreen();
-              default:
-                return WomenScreen();
+              case 'WOMEN': return WomenScreen();
+              case 'MEN': return MenScreen();
+              case 'KIDS': return KidsScreen();
+              default: return WomenScreen();
             }
           }),
-
-          // Profile Tab
           Obx(() {
             if (controller.selectedIndex.value == 3 && controller.showFavorites.value) {
-              return FavoritesView(
-                onBackPressed: () => controller.backFromFavorites(),
-              );
+              return FavoritesView(onBackPressed: () => controller.backFromFavorites());
             }
             return ProfileViewForTab();
           }),
@@ -187,7 +149,7 @@ class CustomTabView extends StatelessWidget {
         margin: EdgeInsets.fromLTRB(20, 0, 20, 20),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(25),
+          borderRadius: BorderRadius.circular(35),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.08),
@@ -202,35 +164,23 @@ class CustomTabView extends StatelessWidget {
           children: [
             _buildTabItem(
               index: 0,
-              unselectedImage: 'assets/tabview/homel.png',
-              selectedImage: 'assets/tabview/homesel.png',
+              iconAsset: 'assets/tabview/homel.png',
               label: 'Home',
-              fallbackUnselected: Icons.home_outlined,
-              fallbackSelected: Icons.home,
             ),
             _buildTabItem(
               index: 1,
-              unselectedImage: 'assets/tabview/offerr.png',
-              selectedImage: 'assets/tabview/offerl.png',
+              iconAsset: 'assets/tabview/offers.png',
               label: 'Offers',
-              fallbackUnselected: Icons.local_offer_outlined,
-              fallbackSelected: Icons.local_offer,
             ),
             _buildTabItem(
               index: 2,
-              unselectedImage: 'assets/tabview/categories.png',
-              selectedImage: 'assets/tabview/categoriesl.png',
+              iconAsset: 'assets/tabview/categories.png',
               label: 'Categories',
-              fallbackUnselected: Icons.apps_outlined,
-              fallbackSelected: Icons.apps,
             ),
             _buildTabItem(
               index: 3,
-              unselectedImage: 'assets/tabview/profilee.png',
-              selectedImage: 'assets/tabview/profilesl.png',
+              iconAsset: 'assets/tabview/profile.png',
               label: 'Profile',
-              fallbackUnselected: Icons.person_outline,
-              fallbackSelected: Icons.person,
             ),
           ],
         ),
@@ -238,103 +188,59 @@ class CustomTabView extends StatelessWidget {
     ));
   }
 
+  // ## THIS WIDGET CREATES THE DESIGN FROM YOUR PICTURE ##
   Widget _buildTabItem({
     required int index,
-    required String unselectedImage,
-    required String selectedImage,
+    required String iconAsset,
     required String label,
-    required IconData fallbackUnselected,
-    required IconData fallbackSelected,
   }) {
     return GestureDetector(
       onTap: () => controller.onTabTapped(index),
-      child: AnimatedBuilder(
-        animation: Listenable.merge([
-          controller.tabControllers[index],
-          controller.scaleController,
-        ]),
-        builder: (context, child) {
-          final isSelected = controller.selectedIndex.value == index;
-          final scaleValue = isSelected ? 1.0 - (controller.scaleController.value * 0.05) : 1.0;
-
-          return Transform.scale(
-            scale: scaleValue,
-            child: AnimatedContainer(
-              duration: Duration(milliseconds: 300),
-              curve: Curves.easeInOutCubic,
-              height: 45,
-              padding: EdgeInsets.symmetric(horizontal: isSelected ? 16 : 8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                color: isSelected ? Color(0xFF2196F3) : Colors.transparent,
+      child: Obx(() {
+        final isSelected = controller.selectedIndex.value == index;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          height: 50,
+          padding: EdgeInsets.symmetric(horizontal: isSelected ? 18.0 : 12.0),
+          decoration: BoxDecoration(
+            color: isSelected ? Color(0xFF2196F3) : Colors.transparent,
+            borderRadius: BorderRadius.circular(25.0),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                iconAsset,
+                width: 28, // Good, visible icon size
+                height: 28,
+                color: isSelected ? Colors.white : Colors.grey[700],
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 22,
-                    height: 22,
-                    child: isSelected
-                        ? Image.asset(
-                      selectedImage,
-                      width: 22,
-                      height: 22,
-                      color: Colors.white,
-                      errorBuilder: (_, __, ___) => Icon(
-                        fallbackSelected,
-                        size: 22,
-                        color: Colors.white,
-                      ),
-                    )
-                        : Image.asset(
-                      unselectedImage,
-                      width: 22,
-                      height: 22,
-                      color: Colors.grey[600],
-                      errorBuilder: (_, __, ___) => Icon(
-                        fallbackUnselected,
-                        size: 22,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ),
-                  AnimatedContainer(
-                    duration: Duration(milliseconds: 300),
-                    width: isSelected ? 8 : 0,
-                  ),
-                  AnimatedSize(
-                    duration: Duration(milliseconds: 300),
-                    curve: Curves.easeInOutCubic,
-                    child: isSelected
-                        ? FadeTransition(
-                      opacity: controller.tabControllers[index],
-                      child: SlideTransition(
-                        position: Tween<Offset>(
-                          begin: Offset(0.3, 0),
-                          end: Offset.zero,
-                        ).animate(CurvedAnimation(
-                          parent: controller.tabControllers[index],
-                          curve: Curves.easeOutCubic,
-                        )),
-                        child: Text(
-                          label,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
+              // Use AnimatedSize to smoothly show/hide the text
+              AnimatedSize(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                child: Row(
+                  children: [
+                    if (isSelected)
+                      SizedBox(width: 8.0),
+                    if (isSelected)
+                      Text(
+                        label,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15, // Good, readable font size
                         ),
                       ),
-                    )
-                        : SizedBox.shrink(),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          );
-        },
-      ),
+            ],
+          ),
+        );
+      }),
     );
   }
 }

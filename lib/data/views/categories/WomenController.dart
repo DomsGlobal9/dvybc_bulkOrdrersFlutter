@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../home/CustomAppBar.dart';
-import '../home/homeScreen.dart';
 import '../tabview/tabviews.dart';
 
 class WomenController extends GetxController {
   final RxInt currentPage = 0.obs;
+  final RxBool showAll = false.obs; // <-- To toggle show all
+
   final List<String> bannerImages = [
     'assets/images/categories/catog.png',
     'assets/images/categories/catog.png',
@@ -21,17 +22,12 @@ class WomenController extends GetxController {
   void _startAutoScroll() {
     Future.delayed(Duration.zero, () {
       ever(currentPage, (_) {
-        Future.delayed(Duration(seconds: 3), () {
+        Future.delayed(const Duration(seconds: 3), () {
           int nextPage = (currentPage.value + 1) % bannerImages.length;
           currentPage.value = nextPage;
         });
       });
     });
-  }
-
-  @override
-  void onClose() {
-    super.onClose();
   }
 }
 
@@ -105,108 +101,135 @@ class WomenScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: CustomAppBar(),
-      body: Obx(() => SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Banner Section
-            Container(
-              height: 200,
-              margin: EdgeInsets.all(16),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: PageView.builder(
-                  itemCount: controller.bannerImages.length,
-                  controller: PageController(initialPage: controller.currentPage.value),
-                  onPageChanged: (index) {
-                    controller.currentPage.value = index;
-                  },
-                  itemBuilder: (context, index) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        color: Colors.grey[200],
-                      ),
-                      child: Image.asset(
-                        controller.bannerImages[index],
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: Colors.grey[200],
-                            child: Center(
-                              child: Icon(
-                                Icons.image_outlined,
-                                size: 60,
-                                color: Colors.grey[400],
+      body: Obx(() {
+        // Show only first 6 or all depending on state
+        final displayCategories = controller.showAll.value
+            ? categories
+            : categories.take(6).toList();
+
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Banner Section
+              Container(
+                height: 200,
+                margin: const EdgeInsets.all(16),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: PageView.builder(
+                    itemCount: controller.bannerImages.length,
+                    controller: PageController(
+                        initialPage: controller.currentPage.value),
+                    onPageChanged: (index) {
+                      controller.currentPage.value = index;
+                    },
+                    itemBuilder: (context, index) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          color: Colors.grey[200],
+                        ),
+                        child: Image.asset(
+                          controller.bannerImages[index],
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey[200],
+                              child: Center(
+                                child: Icon(
+                                  Icons.image_outlined,
+                                  size: 60,
+                                  color: Colors.grey[400],
+                                ),
                               ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+
+              // Categories Section Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Categories',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
                       ),
-                    );
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        controller.showAll.value = !controller.showAll.value;
+                      },
+                      child: Stack(
+                        alignment: Alignment.bottomCenter,
+                        children: [
+                          // The text
+                          Text(
+                            controller.showAll.value ? 'Show less' : 'Show all',
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 14,
+                              decoration: TextDecoration.none, // remove default underline
+                            ),
+                          ),
+
+                          // Custom underline with gap
+                          Positioned(
+                            bottom: -2, // control the gap here
+                            child: Container(
+                              height: 1, // thickness of underline
+                              width: 55, // adjust based on text length or use dynamic
+                              color: Colors.black,
+                            ),
+                          ),
+                        ],
+                      )
+
+                    ),
+                  ],
+                ),
+              ),
+
+              // Categories Grid
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 0.55,
+                  ),
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: displayCategories.length,
+                  itemBuilder: (context, index) {
+                    return _buildCategoryCard(displayCategories[index]);
                   },
                 ),
               ),
-            ),
-
-            // Categories Section Header
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Categories',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {},
-                    child: Text(
-                      'Show all',
-                      style: TextStyle(
-                        color: Color(0xFF3B82F6),
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Categories Grid - STATIC with asset images
-            Padding(
-              padding: EdgeInsets.all(16),
-              child: GridView.builder(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 0.55,
-                ),
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                itemCount: categories.length,
-                itemBuilder: (context, index) {
-                  return _buildCategoryCard(categories[index]);
-                },
-              ),
-            ),
-            SizedBox(height: 20),
-          ],
-        ),
-      )),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      }),
     );
   }
 
   Widget _buildCategoryCard(CategoryData category) {
     return GestureDetector(
       onTap: () {
-        // Use the tab controller to navigate instead of Get.toNamed
         final tabController = Get.find<TabControllerX>();
         tabController.navigateToSubcategory(category.name);
       },
@@ -217,7 +240,7 @@ class WomenScreen extends StatelessWidget {
             BoxShadow(
               color: Colors.black.withOpacity(0.08),
               blurRadius: 8,
-              offset: Offset(0, 2),
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -225,7 +248,6 @@ class WomenScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           child: Stack(
             children: [
-              // Full image background
               Positioned.fill(
                 child: Image.asset(
                   category.assetImage,
@@ -244,13 +266,13 @@ class WomenScreen extends StatelessWidget {
                   },
                 ),
               ),
-              // Text overlay at bottom
               Positioned(
                 bottom: 0,
                 left: 0,
                 right: 0,
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
@@ -266,7 +288,7 @@ class WomenScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Colors.white,
@@ -274,7 +296,7 @@ class WomenScreen extends StatelessWidget {
                         Shadow(
                           offset: Offset(0, 1),
                           blurRadius: 2,
-                          color: Colors.black.withOpacity(0.8),
+                          color: Colors.black,
                         ),
                       ],
                     ),

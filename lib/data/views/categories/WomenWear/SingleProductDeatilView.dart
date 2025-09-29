@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../model/Women/WomenModel.dart';
 import '../../../viewModel/Women/SingleProductViewModel.dart';
+import '../../Widgets/ShareWidget.dart';
 
 class SingleProductView extends StatelessWidget {
   const SingleProductView({Key? key}) : super(key: key);
@@ -627,7 +628,9 @@ class SingleProductView extends StatelessWidget {
                                 ),
                                 child: IconButton(
                                   icon: Icon(Icons.share, color: Colors.black),
-                                  onPressed: () {},
+                                  onPressed: () {
+                                    ShareService.quickShareProduct(product);
+                                  },
                                 ),
                               ),
                             ],

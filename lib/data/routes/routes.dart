@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../main.dart';
 import '../Cart/CheckoutAddressView.dart';
 import '../Cart/CheckoutPaymentView.dart';
 import '../Cart/CheckoutReviewView.dart';
@@ -32,6 +33,7 @@ import '../views/tabview/tabviews.dart';
 import '../Cart/CartController.dart';
 import '../Cart/CartView.dart';
 
+// RouteManager is now in main.dart - no need to duplicate it here
 
 class AppRoutes {
   // Route constants
@@ -74,7 +76,7 @@ class AppRoutes {
   static const productSingle = '/product-single';
   static const cart = '/cart';
 
-  // Virtual Try-On route - ADD THIS
+  // Virtual Try-On route
   static const virtualTryOn = '/virtual-tryon';
 
   // Checkout routes
@@ -225,21 +227,21 @@ class AppRoutes {
       transitionDuration: Duration(milliseconds: 300),
     ),
 
-    // Women's subcategory route (the missing view you needed)
+    // Women's subcategory route
     GetPage(
       name: '/women-subcategory',
       page: () => WomenSubcategoryView(
         mainCategory: Get.arguments?['category'] ?? 'Ethnic wear',
-        onBackPressed: null, // Since this is a separate route, no callback needed
+        onBackPressed: null,
       ),
       transition: Transition.fade,
       transitionDuration: Duration(milliseconds: 300),
     ),
 
-    // Women's individual category routes - these are now backup routes
+    // Women's individual category routes
     GetPage(
       name: ethnicWear,
-      page: () => const  EthnicWearView(),
+      page: () => const EthnicWearView(),
       transition: Transition.fade,
       transitionDuration: Duration(milliseconds: 300),
     ),
@@ -258,7 +260,7 @@ class AppRoutes {
       transitionDuration: Duration(milliseconds: 300),
     ),
 
-    // Virtual Try-On route - ADD THIS
+    // Virtual Try-On route
     GetPage(
       name: virtualTryOn,
       page: () => const VirtualTryOnView(),
@@ -335,22 +337,18 @@ class AppRoutes {
   // Helper methods for controller management
   static void _clearAllControllers() {
     try {
-      // Clear auth controllers
       if (Get.isRegistered<LoginController>()) {
         Get.delete<LoginController>(force: true);
       }
       if (Get.isRegistered<RegisterController>()) {
         Get.delete<RegisterController>(force: true);
       }
-
-      // Clear app controllers
       if (Get.isRegistered<CartController>()) {
         Get.delete<CartController>(force: true);
       }
       if (Get.isRegistered<FilterController>()) {
         Get.delete<FilterController>(force: true);
       }
-
       print('All controllers cleared successfully');
     } catch (e) {
       print('Error clearing controllers: $e');
@@ -373,7 +371,6 @@ class AppRoutes {
 
   static void _initializeAppControllers() {
     try {
-      // Initialize cart controller for the app
       if (!Get.isRegistered<CartController>()) {
         Get.lazyPut<CartController>(() => CartController(), fenix: true);
       }
@@ -389,21 +386,39 @@ class AppRoutes {
     Get.offAllNamed(routeName);
   }
 
+  // Helper to navigate and save route
+  static Future<void> navigateToWithSave(String routeName) async {
+    await RouteManager.saveRoute(routeName);
+    Get.toNamed(routeName);
+  }
+
   // Helper method to navigate to main app with proper initialization
-  static void navigateToHome() {
+  static Future<void> navigateToHome() async {
     _clearAuthControllers();
     _initializeAppControllers();
+    await RouteManager.setLoggedIn(true);
+    await RouteManager.saveRoute(home);
+    Get.offAllNamed(home);
+  }
+
+  // NEW: Helper method for login navigation
+  static Future<void> navigateAfterLogin() async {
+    _clearAuthControllers();
+    _initializeAppControllers();
+    await RouteManager.setLoggedIn(true);
+    await RouteManager.saveRoute(home);
     Get.offAllNamed(home);
   }
 
   // Helper method for logout - clears everything and goes to login
-  static void logout() {
+  static Future<void> logout() async {
     _clearAllControllers();
-    _clearStoredData();
+    await _clearStoredData();
+    await RouteManager.clearRouteData();
     Get.offAllNamed(login);
   }
 
-  static void _clearStoredData() async {
+  static Future<void> _clearStoredData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('user_token');

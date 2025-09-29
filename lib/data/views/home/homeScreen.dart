@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../Favorites/FavoritesController.dart';
 import '../../Favorites/FavoritesView.dart';
@@ -32,8 +33,6 @@ class Category {
     required this.imagePath,
   });
 }
-
-
 
 class HomeController extends GetxController with GetSingleTickerProviderStateMixin {
   var categories = <Category>[
@@ -72,6 +71,7 @@ class HomeController extends GetxController with GetSingleTickerProviderStateMix
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  DateTime? _lastPressedAt;
 
   @override
   void onInit() {
@@ -111,185 +111,204 @@ class HomeController extends GetxController with GetSingleTickerProviderStateMix
     cartController.addProductToCart(product);
   }
 
+  // Handle back button press
+  bool handleBackPress() {
+    final now = DateTime.now();
+    final shouldExit = _lastPressedAt == null ||
+        now.difference(_lastPressedAt!) > Duration(seconds: 2);
+
+    if (shouldExit) {
+      _lastPressedAt = now;
+      Get.snackbar(
+        'Press back again to exit',
+        '',
+        duration: Duration(seconds: 2),
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.black87,
+        colorText: Colors.white,
+        margin: EdgeInsets.all(10),
+      );
+      return false; // Don't exit yet
+    } else {
+      return true; // Exit app
+    }
+  }
+
   Animation<double> get fadeAnimation => _fadeAnimation;
 }
-
-
 
 class HomeScreen extends StatelessWidget {
   final HomeController controller = Get.put(HomeController());
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: CustomAppBar(),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 20),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: FadeTransition(
-                opacity: controller.fadeAnimation,
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+
+        final shouldExit = controller.handleBackPress();
+        if (shouldExit) {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.grey[50],
+        appBar: CustomAppBar(),
+        body: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: 20),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Container(
-                  padding: EdgeInsets.all(24),
+                  height: 690,
+                  width: double.infinity,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF1565C0), Color(0xFF0D47A1)],
-                    ),
                     borderRadius: BorderRadius.circular(16),
+                    image: DecorationImage(
+                      image: AssetImage('assets/images/homePic.png'),
+                      fit: BoxFit.fill,
+                    ),
                   ),
-                  child: Column(
-                    children: [
-                      Text(
-                        '"Shop Fashion in Bulk\nMen, Women, Kids &\nMore at Unbeatable\nPrices!"',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          height: 1.3,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 20),
-                      Container(
-                        height: 180,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          image: DecorationImage(
-                            image: AssetImage('assets/images/family.jpg'),
-                            fit: BoxFit.cover,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFF42A5F5),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                          padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          'View Collection',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: GestureDetector(
+                      onTap: () {
+                        // TODO: handle view button action
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: SizedBox(
+                          width: 300,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              // TODO: handle button tap
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(0xFF3B778C),
+                              padding: EdgeInsets.all(15),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(10)),
+                              ),
+                              elevation: 4,
+                            ),
+                            child: Text(
+                              "View",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            SizedBox(height: 32),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Divider(
-                      color: Colors.grey[400],
-                      thickness: 1,
+              SizedBox(height: 32),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Divider(
+                        color: Colors.grey[400],
+                        thickness: 1,
+                      ),
                     ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        'Find Your Preference',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Divider(
+                        color: Colors.grey[400],
+                        thickness: 1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 20),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Obx(() => GridView.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 0.85,
                   ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'Find Your Preference',
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: controller.categories.length,
+                  itemBuilder: (context, index) {
+                    return _buildCategoryCard(controller.categories[index], controller);
+                  },
+                )),
+              ),
+              SizedBox(height: 32),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Best Seller',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Colors.black87,
                       ),
                     ),
-                  ),
-                  Expanded(
-                    child: Divider(
-                      color: Colors.grey[400],
-                      thickness: 1,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 20),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Obx(() => GridView.builder(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 0.85,
-                ),
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                itemCount: controller.categories.length,
-                itemBuilder: (context, index) {
-                  return _buildCategoryCard(controller.categories[index], controller);
-                },
-              )),
-            ),
-            SizedBox(height: 32),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Best Seller',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {},
-                    child: Text(
-                      'Show all',
-                      style: TextStyle(
-                        color: Color(0xFF1976D2),
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
+                    GestureDetector(
+                      onTap: () {},
+                      child: Text(
+                        'Show all',
+                        style: TextStyle(
+                          color: Color(0xFF1976D2),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 16),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Obx(() => GridView.builder(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 0.65,
+                  ],
                 ),
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                itemCount: controller.bestSellerProducts.length,
-                itemBuilder: (context, index) {
-                  return _buildProductCard(controller.bestSellerProducts[index], controller);
-                },
-              )),
-            ),
-            SizedBox(height: 20),
-          ],
+              ),
+              SizedBox(height: 16),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Obx(() => GridView.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 0.65,
+                  ),
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: controller.bestSellerProducts.length,
+                  itemBuilder: (context, index) {
+                    return _buildProductCard(controller.bestSellerProducts[index], controller);
+                  },
+                )),
+              ),
+              SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
@@ -380,9 +399,7 @@ class HomeScreen extends StatelessWidget {
                       image: DecorationImage(
                         image: AssetImage(product.imagePath),
                         fit: BoxFit.cover,
-                        onError: (error, stackTrace) {
-                          // Handle image loading error
-                        },
+                        onError: (error, stackTrace) {},
                       ),
                     ),
                     child: product.imagePath.isEmpty
@@ -431,7 +448,6 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
             ),
-            // Product Details with Add to Cart button
             Expanded(
               flex: 2,
               child: Padding(

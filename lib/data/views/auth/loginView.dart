@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../Services/GoogleSignInService.dart';
+import '../../routes/routes.dart';
 import '../tabview/tabviews.dart';
 import 'register.dart' hide Padding;
 
 class LoginController extends GetxController {
-  // Initialize controllers in onInit instead of at declaration
   late final TextEditingController emailController;
   late final TextEditingController passwordController;
 
@@ -19,13 +19,11 @@ class LoginController extends GetxController {
   final RxnString successMessage = RxnString();
   final RxBool isLoading = false.obs;
 
-  // Add a flag to track disposal state
   bool _isDisposed = false;
 
   @override
   void onInit() {
     super.onInit();
-    // Initialize controllers here to avoid disposal issues
     emailController = TextEditingController();
     passwordController = TextEditingController();
     _isDisposed = false;
@@ -57,25 +55,21 @@ class LoginController extends GetxController {
 
     bool isValid = true;
 
-    // Email validation
     if (email.isEmpty) {
       emailError.value = 'Email or Phone is required';
       isValid = false;
     } else if (GetUtils.isEmail(email)) {
-      // Check if it's a valid email format
       if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(email)) {
         emailError.value = 'Please enter a valid email address';
         isValid = false;
       }
     } else if (!GetUtils.isPhoneNumber(email)) {
-      // If it's not an email, check if it's a valid phone number
       if (!RegExp(r'^[+]?[0-9]{10,15}$').hasMatch(email.replaceAll(' ', ''))) {
         emailError.value = 'Please enter a valid email or phone number';
         isValid = false;
       }
     }
 
-    // Password validation
     if (password.isEmpty) {
       passwordError.value = 'Password is required';
       isValid = false;
@@ -89,7 +83,6 @@ class LoginController extends GetxController {
     }
   }
 
-  // Safe Firebase Auth method that handles PigeonUserDetails error
   Future<UserCredential?> _safeFirebaseAuth(String email, String password) async {
     try {
       return await FirebaseAuth.instance.signInWithEmailAndPassword(
@@ -188,12 +181,8 @@ class LoginController extends GetxController {
       if (cred?.user != null) {
         print('Login successful: ${cred!.user!.uid}');
 
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isLoggedIn', true);
-
         if (!_isDisposed) successMessage.value = 'Login successful! Redirecting...';
 
-        // Wait a moment to show success message
         await Future.delayed(Duration(seconds: 1));
 
         if (!_isDisposed) {
@@ -202,7 +191,9 @@ class LoginController extends GetxController {
           clearMessages();
         }
 
-        Get.offAll(() => CustomTabView());
+        // Use AppRoutes.navigateAfterLogin() instead of Get.offAll()
+        await AppRoutes.navigateAfterLogin();
+
       } else {
         if (!_isDisposed) passwordError.value = 'Login failed. Please try again.';
       }
@@ -257,10 +248,6 @@ class LoginController extends GetxController {
     Get.toNamed('/forgot-password');
   }
 
-  // Fixed Google Login Method
-  // Updated loginWithGoogle method for LoginController
-// Replace the existing method with this one
-
   void loginWithGoogle() async {
     if (_isDisposed) return;
 
@@ -275,7 +262,6 @@ class LoginController extends GetxController {
       if (credential?.user != null) {
         print('Google login successful: ${credential!.user!.uid}');
 
-        // Check if user exists in our B2BBulkOrders_users collection
         const String collectionName = 'B2BBulkOrders_users';
         DocumentSnapshot userDoc = await FirebaseFirestore.instance
             .collection(collectionName)
@@ -283,10 +269,8 @@ class LoginController extends GetxController {
             .get();
 
         if (!userDoc.exists) {
-          // User doesn't exist in our database - they need to register first
           print('User not found in database - redirecting to register');
 
-          // Sign out the user since they're not registered
           await GoogleSignInService.signOut();
 
           if (!_isDisposed) {
@@ -295,11 +279,7 @@ class LoginController extends GetxController {
           return;
         }
 
-        // User exists - update their login info
         await _updateGoogleUserData(credential.user!);
-
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isLoggedIn', true);
 
         if (!_isDisposed) {
           successMessage.value = 'Google login successful! Redirecting...';
@@ -310,7 +290,8 @@ class LoginController extends GetxController {
           passwordController.clear();
           clearMessages();
 
-          Get.offAll(() => CustomTabView());
+          // Use AppRoutes.navigateAfterLogin() instead of Get.offAll()
+          await AppRoutes.navigateAfterLogin();
         }
       }
     } catch (e) {
@@ -321,7 +302,6 @@ class LoginController extends GetxController {
     }
   }
 
-// Add this new method to LoginController
   Future<void> _updateGoogleUserData(User user) async {
     try {
       const String collectionName = 'B2BBulkOrders_users';
@@ -337,7 +317,6 @@ class LoginController extends GetxController {
       print('Google user login info updated');
     } catch (e) {
       print('Error updating user data: $e');
-      // Don't throw error for update failures - login should still work
     }
   }
 
@@ -349,7 +328,7 @@ class LoginController extends GetxController {
     } else if (error.toString().contains('network-request-failed')) {
       emailError.value = 'Network error. Check your connection';
     } else if (error.toString().contains('sign_in_canceled')) {
-      return; // User canceled - no error needed
+      return;
     } else {
       passwordError.value = 'Google login failed. Please try again';
     }
@@ -375,7 +354,6 @@ class LoginController extends GetxController {
   void onClose() {
     _isDisposed = true;
 
-    // Only dispose if controllers are initialized and not already disposed
     try {
       if (emailController.hasListeners || emailController.text.isNotEmpty) {
         emailController.dispose();
@@ -396,7 +374,6 @@ class LoginController extends GetxController {
   }
 }
 
-// Mock UserCredential class for PigeonUserDetails workaround
 class _MockUserCredential implements UserCredential {
   @override
   final User user;
@@ -411,10 +388,8 @@ class _MockUserCredential implements UserCredential {
 }
 
 class LoginScreen extends StatelessWidget {
-  // Create a fresh controller instance each time
   @override
   Widget build(BuildContext context) {
-    // Use Get.put with tag to ensure fresh instance
     final LoginController controller = Get.put(
         LoginController(),
         tag: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -531,7 +506,6 @@ class LoginScreen extends StatelessWidget {
         ),
         SizedBox(height: 24),
 
-        // Success Message
         Obx(() => controller.successMessage.value != null
             ? Container(
           margin: EdgeInsets.only(bottom: 16),
@@ -556,7 +530,6 @@ class LoginScreen extends StatelessWidget {
         )
             : SizedBox.shrink()),
 
-        // Email/Phone Field
         Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
@@ -615,7 +588,6 @@ class LoginScreen extends StatelessWidget {
 
         SizedBox(height: 16),
 
-        // Password Field
         Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
@@ -688,7 +660,6 @@ class LoginScreen extends StatelessWidget {
 
         SizedBox(height: 16),
 
-        // Remember me and Forgot password row
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -728,7 +699,6 @@ class LoginScreen extends StatelessWidget {
 
         SizedBox(height: 20),
 
-        // Login Button
         Container(
           width: double.infinity,
           height: 48,
@@ -763,7 +733,6 @@ class LoginScreen extends StatelessWidget {
 
         SizedBox(height: 24),
 
-        // OR divider
         Row(
           children: [
             Expanded(child: Divider(color: Colors.grey[300], thickness: 1)),
@@ -784,7 +753,6 @@ class LoginScreen extends StatelessWidget {
 
         SizedBox(height: 24),
 
-        // Social login buttons
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -824,7 +792,6 @@ class LoginScreen extends StatelessWidget {
 
         SizedBox(height: 24),
 
-        // Register link
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
