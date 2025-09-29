@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../../model/Women/WomenModel.dart';
 import '../../../viewModel/Women/SingleProductViewModel.dart';
-import '../../Widgets/ShareWidget.dart';
 
 class SingleProductView extends StatelessWidget {
   const SingleProductView({Key? key}) : super(key: key);
@@ -21,10 +21,9 @@ class SingleProductView extends StatelessWidget {
     final SingleProductController controller = Get.put(SingleProductController());
     final RxBool isDescriptionExpanded = false.obs;
     final RxBool isReviewsExpanded = false.obs;
-    final RxInt currentImageIndex = 0.obs; // Track current image index
-    final PageController pageController = PageController(); // For image swiping
+    final RxInt currentImageIndex = 0.obs;
+    final PageController pageController = PageController();
 
-    // Add null safety check
     final arguments = Get.arguments;
     if (arguments == null || arguments['product'] == null) {
       return Scaffold(
@@ -46,806 +45,1088 @@ class SingleProductView extends StatelessWidget {
 
     final WomenProduct product = arguments['product'];
 
-    // Initialize the controller with the product
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.initializeProduct(product);
     });
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          CustomScrollView(
-            slivers: [
-              // Enhanced product image section with swipe functionality
-              SliverToBoxAdapter(
-                child: Container(
-                  height: 500,
-                  child: Row(
-                    children: [
-                      // Main product image with swipe functionality
-                      Expanded(
-                        child: Container(
-                          margin: EdgeInsets.only(top: 40, left: 16, bottom: 20),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: Stack(
-                              children: [
-                                // Swipeable images
-                                PageView.builder(
-                                  controller: pageController,
-                                  onPageChanged: (index) {
-                                    currentImageIndex.value = index;
-                                  },
-                                  itemCount: product.imageUrls?.isNotEmpty == true
-                                      ? product.imageUrls!.length
-                                      : 1,
-                                  itemBuilder: (context, index) {
-                                    String imageUrl = product.imageUrls?.isNotEmpty == true
-                                        ? product.imageUrls![index]
-                                        : product.image;
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return _buildShimmerLoading();
+        }
 
-                                    return Hero(
-                                      tag: 'product-${product.id}-$index',
-                                      child: Image.network(
-                                        imageUrl,
-                                        fit: BoxFit.cover,
-                                        width: double.infinity,
-                                        errorBuilder: (context, error, stackTrace) {
-                                          return Container(
-                                            color: Colors.grey[800],
-                                            child: Center(
-                                              child: Column(
-                                                mainAxisAlignment: MainAxisAlignment.center,
-                                                children: [
-                                                  Icon(Icons.image_outlined,
-                                                      size: 80,
-                                                      color: Colors.grey[600]),
-                                                  SizedBox(height: 16),
-                                                  Text(
-                                                    product.name,
-                                                    textAlign: TextAlign.center,
-                                                    style: TextStyle(
-                                                      fontSize: 18,
-                                                      color: Colors.grey[400],
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    );
-                                  },
+        return _buildActualContent(
+          context,
+          controller,
+          product,
+          isDescriptionExpanded,
+          isReviewsExpanded,
+          currentImageIndex,
+          pageController,
+        );
+      }),
+    );
+  }
+
+  Widget _buildShimmerLoading() {
+    return Stack(
+      children: [
+        CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Container(
+                height: 500,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        margin: EdgeInsets.only(top: 40, left: 16, bottom: 20),
+                        child: Shimmer.fromColors(
+                          baseColor: Colors.grey[300]!,
+                          highlightColor: Colors.grey[100]!,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      width: 60,
+                      child: Column(
+                        children: [
+                          SizedBox(height: 60),
+                          ...List.generate(
+                            4,
+                                (index) => Container(
+                              margin: EdgeInsets.only(bottom: 8, right: 8),
+                              child: Shimmer.fromColors(
+                                baseColor: Colors.grey[300]!,
+                                highlightColor: Colors.grey[100]!,
+                                child: Container(
+                                  width: 50,
+                                  height: 60,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
                                 ),
-
-                                // Image indicator dots
-                                if (product.imageUrls?.isNotEmpty == true && product.imageUrls!.length > 1)
-                                  Positioned(
-                                    bottom: 16,
-                                    left: 0,
-                                    right: 0,
-                                    child: Obx(() => Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: List.generate(
-                                        product.imageUrls!.length,
-                                            (index) => Container(
-                                          margin: EdgeInsets.symmetric(horizontal: 4),
-                                          width: currentImageIndex.value == index ? 12 : 8,
-                                          height: 8,
-                                          decoration: BoxDecoration(
-                                            color: currentImageIndex.value == index
-                                                ? Colors.white
-                                                : Colors.white.withOpacity(0.5),
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
-                                        ),
-                                      ),
-                                    )),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
+                  ),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Shimmer.fromColors(
+                        baseColor: Colors.grey[300]!,
+                        highlightColor: Colors.grey[100]!,
+                        child: Container(
+                          height: 24,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      Shimmer.fromColors(
+                        baseColor: Colors.grey[300]!,
+                        highlightColor: Colors.grey[100]!,
+                        child: Container(
+                          height: 48,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Shimmer.fromColors(
+                            baseColor: Colors.grey[300]!,
+                            highlightColor: Colors.grey[100]!,
+                            child: Container(
+                              height: 20,
+                              width: 100,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 16),
+                          Shimmer.fromColors(
+                            baseColor: Colors.grey[300]!,
+                            highlightColor: Colors.grey[100]!,
+                            child: Container(
+                              height: 16,
+                              width: 60,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 24),
+                      Text(
+                        'Colors Available',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Row(
+                        children: List.generate(
+                          5,
+                              (index) => Padding(
+                            padding: const EdgeInsets.only(right: 12.0),
+                            child: Shimmer.fromColors(
+                              baseColor: Colors.grey[300]!,
+                              highlightColor: Colors.grey[100]!,
+                              child: Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 24),
+                      Text(
+                        'Selected Size',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: List.generate(
+                          6,
+                              (index) => Shimmer.fromColors(
+                            baseColor: Colors.grey[300]!,
+                            highlightColor: Colors.grey[100]!,
+                            child: Container(
+                              width: 50,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Shimmer.fromColors(
+                              baseColor: Colors.grey[300]!,
+                              highlightColor: Colors.grey[100]!,
+                              child: Container(
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Shimmer.fromColors(
+                              baseColor: Colors.grey[300]!,
+                              highlightColor: Colors.grey[100]!,
+                              child: Container(
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 24),
+                      Row(
+                        children: List.generate(
+                          3,
+                              (index) => Expanded(
+                            child: Column(
+                              children: [
+                                Shimmer.fromColors(
+                                  baseColor: Colors.grey[300]!,
+                                  highlightColor: Colors.grey[100]!,
+                                  child: Container(
+                                    width: 48,
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
                                   ),
-
-                                // Image counter
-                                if (product.imageUrls?.isNotEmpty == true && product.imageUrls!.length > 1)
-                                  Positioned(
-                                    top: 16,
-                                    right: 16,
-                                    child: Obx(() => Container(
-                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: Colors.black.withOpacity(0.6),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        '${currentImageIndex.value + 1}/${product.imageUrls!.length}',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    )),
+                                ),
+                                SizedBox(height: 8),
+                                Shimmer.fromColors(
+                                  baseColor: Colors.grey[300]!,
+                                  highlightColor: Colors.grey[100]!,
+                                  child: Container(
+                                    height: 12,
+                                    width: 60,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
                                   ),
+                                ),
                               ],
                             ),
                           ),
                         ),
                       ),
-
-                      // Enhanced side thumbnail images
+                      SizedBox(height: 32),
+                      Text(
+                        'Similar Products',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      SizedBox(height: 16),
                       Container(
-                        width: 60,
-                        child: Column(
-                          children: [
-                            SizedBox(height: 60),
-                            if (product.imageUrls?.isNotEmpty == true)
-                              ...List.generate(
-                                product.imageUrls!.length > 6 ? 6 : product.imageUrls!.length,
-                                    (index) => GestureDetector(
-                                  onTap: () {
-                                    currentImageIndex.value = index;
-                                    pageController.animateToPage(
-                                      index,
-                                      duration: Duration(milliseconds: 300),
-                                      curve: Curves.easeInOut,
-                                    );
-                                  },
-                                  child: Obx(() => Container(
-                                    margin: EdgeInsets.only(bottom: 8, right: 8),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: Container(
-                                        width: 50,
-                                        height: 60,
-                                        decoration: BoxDecoration(
-                                          border: currentImageIndex.value == index
-                                              ? Border.all(color: Color(0xFF187DBD), width: 2)
-                                              : Border.all(color: Colors.grey[300]!, width: 1),
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Image.network(
-                                          product.imageUrls![index],
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) {
-                                            return Container(
-                                              color: Colors.grey[200],
-                                              child: Icon(Icons.image,
-                                                  color: Colors.grey[400],
-                                                  size: 20),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                  )),
-                                ),
-                              )
-                            else
-                            // Show single placeholder if no multiple images
-                              Container(
-                                margin: EdgeInsets.only(bottom: 8, right: 8),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Container(
-                                    width: 50,
-                                    height: 60,
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: Color(0xFF187DBD), width: 2),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Image.network(
-                                      product.image,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return Container(
-                                          color: Colors.grey[200],
-                                          child: Icon(Icons.image,
-                                              color: Colors.grey[400],
-                                              size: 20),
-                                        );
-                                      },
-                                    ),
+                        height: 240,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: 3,
+                          itemBuilder: (context, index) {
+                            return Container(
+                              width: 160,
+                              margin: EdgeInsets.only(right: 12),
+                              child: Shimmer.fromColors(
+                                baseColor: Colors.grey[300]!,
+                                highlightColor: Colors.grey[100]!,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                 ),
                               ),
-                          ],
+                            );
+                          },
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
+            ),
+          ],
+        ),
+        Positioned(
+          top: 40,
+          left: 16,
+          child: Shimmer.fromColors(
+            baseColor: Colors.grey[300]!,
+            highlightColor: Colors.grey[100]!,
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
-              // Product Details in white container
-              SliverToBoxAdapter(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(24),
-                      topRight: Radius.circular(24),
+  Widget _buildActualContent(
+      BuildContext context,
+      SingleProductController controller,
+      WomenProduct product,
+      RxBool isDescriptionExpanded,
+      RxBool isReviewsExpanded,
+      RxInt currentImageIndex,
+      PageController pageController,
+      ) {
+    return Stack(
+      children: [
+        CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Container(
+                height: 500,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        margin: EdgeInsets.only(top: 40, left: 16, bottom: 20),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Stack(
+                            children: [
+                              PageView.builder(
+                                controller: pageController,
+                                onPageChanged: (index) {
+                                  currentImageIndex.value = index;
+                                },
+                                itemCount: product.imageUrls?.isNotEmpty == true
+                                    ? product.imageUrls!.length
+                                    : 1,
+                                itemBuilder: (context, index) {
+                                  String imageUrl = product.imageUrls?.isNotEmpty == true
+                                      ? product.imageUrls![index]
+                                      : product.image;
+
+                                  return Hero(
+                                    tag: 'product-${product.id}-$index',
+                                    child: Image.network(
+                                      imageUrl,
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Container(
+                                          color: Colors.grey[800],
+                                          child: Center(
+                                            child: Column(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Icon(Icons.image_outlined,
+                                                    size: 80,
+                                                    color: Colors.grey[600]),
+                                                SizedBox(height: 16),
+                                                Text(
+                                                  product.name,
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                    fontSize: 18,
+                                                    color: Colors.grey[400],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  );
+                                },
+                              ),
+                              if (product.imageUrls?.isNotEmpty == true && product.imageUrls!.length > 1)
+                                Positioned(
+                                  bottom: 16,
+                                  left: 0,
+                                  right: 0,
+                                  child: Obx(() => Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: List.generate(
+                                      product.imageUrls!.length,
+                                          (index) => Container(
+                                        margin: EdgeInsets.symmetric(horizontal: 4),
+                                        width: currentImageIndex.value == index ? 12 : 8,
+                                        height: 8,
+                                        decoration: BoxDecoration(
+                                          color: currentImageIndex.value == index
+                                              ? Colors.white
+                                              : Colors.white.withOpacity(0.5),
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                      ),
+                                    ),
+                                  )),
+                                ),
+                              if (product.imageUrls?.isNotEmpty == true && product.imageUrls!.length > 1)
+                                Positioned(
+                                  top: 16,
+                                  right: 16,
+                                  child: Obx(() => Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.6),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      '${currentImageIndex.value + 1}/${product.imageUrls!.length}',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  )),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Product info with share button and virtual try-on
-                      Padding(
-                        padding: EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    product.name,
-                                    style: TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black,
+                    Container(
+                      width: 60,
+                      child: Column(
+                        children: [
+                          SizedBox(height: 60),
+                          if (product.imageUrls?.isNotEmpty == true)
+                            ...List.generate(
+                              product.imageUrls!.length > 6 ? 6 : product.imageUrls!.length,
+                                  (index) => GestureDetector(
+                                onTap: () {
+                                  currentImageIndex.value = index;
+                                  pageController.animateToPage(
+                                    index,
+                                    duration: Duration(milliseconds: 300),
+                                    curve: Curves.easeInOut,
+                                  );
+                                },
+                                child: Obx(() => Container(
+                                  margin: EdgeInsets.only(bottom: 8, right: 8),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Container(
+                                      width: 50,
+                                      height: 60,
+                                      decoration: BoxDecoration(
+                                        border: currentImageIndex.value == index
+                                            ? Border.all(color: Color(0xFF187DBD), width: 2)
+                                            : Border.all(color: Colors.grey[300]!, width: 1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Image.network(
+                                        product.imageUrls![index],
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return Container(
+                                            color: Colors.grey[200],
+                                            child: Icon(Icons.image,
+                                                color: Colors.grey[400],
+                                                size: 20),
+                                          );
+                                        },
+                                      ),
                                     ),
                                   ),
-                                ),
-                                Container(
+                                )),
+                              ),
+                            )
+                          else
+                            Container(
+                              margin: EdgeInsets.only(bottom: 8, right: 8),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  width: 50,
+                                  height: 60,
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(20),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.grey.withOpacity(0.2),
-                                        spreadRadius: 1,
-                                        blurRadius: 5,
-                                        offset: Offset(0, 2),
-                                      ),
-                                    ],
+                                    border: Border.all(color: Color(0xFF187DBD), width: 2),
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: IconButton(
-                                    icon: Icon(Icons.share, color: Colors.black),
-                                    onPressed: () {
-                                      // Your share service implementation
-                                      // ShareService.quickShareProduct(product);
+                                  child: Image.network(
+                                    product.image,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        color: Colors.grey[200],
+                                        child: Icon(Icons.image,
+                                            color: Colors.grey[400],
+                                            size: 20),
+                                      );
                                     },
                                   ),
                                 ),
-                              ],
+                              ),
                             ),
-                            SizedBox(height: 16),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  product.name,
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.grey.withOpacity(0.2),
+                                      spreadRadius: 1,
+                                      blurRadius: 5,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: IconButton(
+                                  icon: Icon(Icons.share, color: Colors.black),
+                                  onPressed: () {},
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 16),
+                          Container(
+                            width: double.infinity,
+                            height: 48,
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                String imageUrl = '';
+                                if (product.imageUrls?.isNotEmpty == true) {
+                                  imageUrl = product.imageUrls!.first;
+                                } else if (product.image.isNotEmpty) {
+                                  imageUrl = product.image;
+                                }
 
-                            // Virtual Try-On Button - positioned right below share button area
-                            Container(
-                              width: double.infinity,
+                                if (imageUrl.isNotEmpty) {
+                                  Get.toNamed('/virtual-tryon', arguments: {
+                                    'garmentImageUrl': imageUrl,
+                                    'productName': product.name,
+                                  });
+                                }
+                              },
+                              icon: Icon(Icons.auto_fix_high, size: 20),
+                              label: Text('Virtual Try-On'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Color(0xFF187DBD),
+                                side: BorderSide(color: Color(0xFF187DBD), width: 2),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Text(
+                                '₹${product.price ?? "2,250"}',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF187DBD),
+                                ),
+                              ),
+                              Text('/Piece', style: TextStyle(color: Colors.grey[600])),
+                              SizedBox(width: 16),
+                              Text(
+                                '(55% OFF)',
+                                style: TextStyle(
+                                  color: Colors.orange,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Text(
+                                'M.R.P ₹5,000',
+                                style: TextStyle(
+                                  decoration: TextDecoration.lineThrough,
+                                  color: Colors.grey[600],
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Tax included. Shipping calculated at checkout.',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Colors Available',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
+                            ),
+                          ),
+                          SizedBox(height: 12),
+                          Obx(() => Row(
+                            children: controller.availableColors.map((color) {
+                              bool isSelected = controller.selectedColor.value == color;
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 12.0),
+                                child: _buildColorOption(color, isSelected, controller),
+                              );
+                            }).toList(),
+                          )),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 24),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Selected Size',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              GestureDetector(
+                                  onTap: () => _showSizeGuideModal(context),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Size Guide',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          color: Color(0xFF187DBD),
+                                          decoration: TextDecoration.none,
+                                        ),
+                                      ),
+                                      SizedBox(height: 2),
+                                      Container(
+                                        height: 1,
+                                        width: 65,
+                                        color: Color(0xFF187DBD),
+                                      ),
+                                    ],
+                                  )
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 12),
+                          Obx(() => Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: controller.availableSizes.map((size) {
+                              bool isSelected = controller.selectedSizes.contains(size);
+                              int? quantity = controller.selectedSizeQuantities[size];
+
+                              return _buildSizeOption(size, isSelected, controller, quantity);
+                            }).toList(),
+                          )),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 24),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Container(
                               height: 48,
                               child: OutlinedButton.icon(
-                                onPressed: () {
-                                  String imageUrl = '';
-                                  if (product.imageUrls?.isNotEmpty == true) {
-                                    imageUrl = product.imageUrls!.first;
-                                  } else if (product.image.isNotEmpty) {
-                                    imageUrl = product.image;
-                                  }
-
-                                  if (imageUrl.isNotEmpty) {
-                                    Get.toNamed('/virtual-tryon', arguments: {
-                                      'garmentImageUrl': imageUrl,
-                                      'productName': product.name,
-                                    });
-                                  }
-                                },
-                                icon: Icon(Icons.auto_fix_high, size: 20),
-                                label: Text('Virtual Try-On'),
+                                onPressed: () => controller.addToCart(),
+                                icon: Icon(Icons.shopping_cart_outlined, size: 20),
+                                label: Text('Add to cart'),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: Color(0xFF187DBD),
-                                  side: BorderSide(color: Color(0xFF187DBD), width: 2),
+                                  side: BorderSide(color: Color(0xFF187DBD)),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                 ),
                               ),
                             ),
-                            SizedBox(height: 8),
-
-                            // Show total images info
-                            if (product.imageUrls?.isNotEmpty == true && product.imageUrls!.length > 1)
-                              Padding(
-                                padding: EdgeInsets.only(bottom: 8),
+                          ),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Container(
+                              height: 48,
+                              child: ElevatedButton(
+                                onPressed: () => controller.buyNow(),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Color(0xFF187DBD),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
                                 child: Text(
-                                  '${product.imageUrls!.length} images available',
-                                  style: TextStyle(
-                                    color: Color(0xFF187DBD),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                  'BUY NOW',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                               ),
-
-                            Row(
-                              children: [
-                                Text(
-                                  '₹${product.price ?? "2,250"}',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF187DBD),
-                                  ),
-                                ),
-                                Text('/Piece', style: TextStyle(color: Colors.grey[600])),
-                                SizedBox(width: 16),
-                                Text(
-                                  '(55% OFF)',
-                                  style: TextStyle(
-                                    color: Colors.orange,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
                             ),
-                            SizedBox(height: 4),
-                            Row(
-                              children: [
-                                Text(
-                                  'M.R.P ₹5,000',
-                                  style: TextStyle(
-                                    decoration: TextDecoration.lineThrough,
-                                    color: Colors.grey[600],
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Tax included. Shipping calculated at checkout.',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-
-                      // Colors Available - Square shapes
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Colors Available',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black,
-                              ),
-                            ),
-                            SizedBox(height: 12),
-                            Obx(() => Row(
-                              children: controller.availableColors.map((color) {
-                                bool isSelected = controller.selectedColor.value == color;
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 12.0),
-                                  child: _buildColorOption(color, isSelected, controller),
-                                );
-                              }).toList(),
-                            )),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 24),
-
-                      // Size Selection with Size Guide button
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
+                    ),
+                    SizedBox(height: 24),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          GestureDetector(
+                            onTap: () => isDescriptionExpanded.toggle(),
+                            child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  'Selected Size',
+                                  'Description',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                     color: Colors.black,
                                   ),
                                 ),
-                                GestureDetector(
-                                    onTap: () => _showSizeGuideModal(context),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Size Guide',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500,
-                                            color: Color(0xFF187DBD),
-                                            decoration: TextDecoration.none,
-                                          ),
-                                        ),
-                                        SizedBox(height: 2),
-                                        Container(
-                                          height: 1,
-                                          width: 65,
-                                          color: Color(0xFF187DBD),
-                                        ),
-                                      ],
-                                    )
+                                Obx(() => Icon(
+                                  isDescriptionExpanded.value
+                                      ? Icons.keyboard_arrow_up
+                                      : Icons.keyboard_arrow_down,
+                                )),
+                              ],
+                            ),
+                          ),
+                          Obx(() => isDescriptionExpanded.value
+                              ? Padding(
+                            padding: EdgeInsets.only(top: 8),
+                            child: Text(
+                              product.description.isNotEmpty
+                                  ? product.description
+                                  : 'A beautiful ${product.name} featuring elegant design and premium quality. Perfect for special occasions and everyday wear.',
+                              style: TextStyle(
+                                color: Colors.grey[700],
+                                fontSize: 14,
+                                height: 1.4,
+                              ),
+                            ),
+                          )
+                              : SizedBox()),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 24),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        children: [
+                          Expanded(child: _buildFeatureIcon(Icons.verified_user, '100% Secure\nPayment')),
+                          Expanded(child: _buildFeatureIcon(Icons.autorenew, 'Easy Return & Quick\nRefund')),
+                          Expanded(child: _buildFeatureIcon(Icons.headset_mic, 'Dedicated\nSupport')),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 32),
+                    Obx(() {
+                      if (controller.similarProducts.isNotEmpty) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                              child: Text(
+                                'Similar Products',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 16),
+                            Container(
+                              height: 240,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                padding: EdgeInsets.symmetric(horizontal: 20),
+                                itemCount: controller.similarProducts.length,
+                                itemBuilder: (context, index) {
+                                  final similarProduct = controller.similarProducts[index];
+                                  return Container(
+                                    width: 160,
+                                    margin: EdgeInsets.only(right: 12),
+                                    child: _buildSimilarProductCard(similarProduct, controller),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        );
+                      } else if (controller.isLoadingSimilar.value) {
+                        return Container(
+                          height: 240,
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF187DBD)),
+                                ),
+                                SizedBox(height: 12),
+                                Text(
+                                  'Loading similar products...',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 14,
+                                  ),
                                 ),
                               ],
                             ),
-                            SizedBox(height: 12),
-                            Obx(() => Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: controller.availableSizes.map((size) {
-                                bool isSelected = controller.selectedSizes.contains(size);
-                                int? quantity = controller.selectedSizeQuantities[size];
+                          ),
+                        );
+                      }
 
-                                return _buildSizeOption(size, isSelected, controller, quantity);
-                              }).toList(),
-                            )),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 24),
-
-                      // Action Buttons
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                height: 48,
-                                child: OutlinedButton.icon(
-                                  onPressed: () => controller.addToCart(),
-                                  icon: Icon(Icons.shopping_cart_outlined, size: 20),
-                                  label: Text('Add to cart'),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: Color(0xFF187DBD),
-                                    side: BorderSide(color: Color(0xFF187DBD)),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 12),
-                            Expanded(
-                              child: Container(
-                                height: 48,
-                                child: ElevatedButton(
-                                  onPressed: () => controller.buyNow(),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Color(0xFF187DBD),
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    'BUY NOW',
-                                    style: TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 24),
-
-                      // Description with simple dropdown
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            GestureDetector(
-                              onTap: () => isDescriptionExpanded.toggle(),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Description',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                  Obx(() => Icon(
-                                    isDescriptionExpanded.value
-                                        ? Icons.keyboard_arrow_up
-                                        : Icons.keyboard_arrow_down,
-                                  )),
-                                ],
-                              ),
-                            ),
-                            Obx(() => isDescriptionExpanded.value
-                                ? Padding(
-                              padding: EdgeInsets.only(top: 8),
-                              child: Text(
-                                product.description.isNotEmpty
-                                    ? product.description
-                                    : 'A beautiful ${product.name} featuring elegant design and premium quality. Perfect for special occasions and everyday wear.',
-                                style: TextStyle(
-                                  color: Colors.grey[700],
-                                  fontSize: 14,
-                                  height: 1.4,
-                                ),
-                              ),
-                            )
-                                : SizedBox()),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 24),
-
-                      // Features with icons
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20),
-                        child: Row(
-                          children: [
-                            Expanded(child: _buildFeatureIcon(Icons.verified_user, '100% Secure\nPayment')),
-                            Expanded(child: _buildFeatureIcon(Icons.autorenew, 'Easy Return & Quick\nRefund')),
-                            Expanded(child: _buildFeatureIcon(Icons.headset_mic, 'Dedicated\nSupport')),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 32),
-
-                      // Similar Products Section - Fixed Implementation
-                      Obx(() {
-                        if (controller.similarProducts.isNotEmpty) {
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                                child: Text(
-                                  'Similar Products',
+                      return SizedBox.shrink();
+                    }),
+                    SizedBox(height: 32),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          GestureDetector(
+                            onTap: () => isReviewsExpanded.toggle(),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Reviews',
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.black,
                                   ),
                                 ),
-                              ),
-                              SizedBox(height: 16),
-                              Container(
-                                height: 240,
-                                child: ListView.builder(
-                                  scrollDirection: Axis.horizontal,
-                                  padding: EdgeInsets.symmetric(horizontal: 20),
-                                  itemCount: controller.similarProducts.length,
-                                  itemBuilder: (context, index) {
-                                    final similarProduct = controller.similarProducts[index];
-                                    return Container(
-                                      width: 160,
-                                      margin: EdgeInsets.only(right: 12),
-                                      child: _buildSimilarProductCard(similarProduct, controller),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
-                          );
-                        } else if (controller.isLoadingSimilar.value) {
-                          return Container(
-                            height: 240,
-                            child: Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF187DBD)),
-                                  ),
-                                  SizedBox(height: 12),
-                                  Text(
-                                    'Loading similar products...',
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                Obx(() => Icon(
+                                  isReviewsExpanded.value
+                                      ? Icons.keyboard_arrow_up
+                                      : Icons.keyboard_arrow_down,
+                                )),
+                              ],
                             ),
-                          );
-                        }
-
-                        return SizedBox.shrink();
-                      }),
-
-                      SizedBox(height: 32),
-
-                      // Reviews Section with simple dropdown
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            GestureDetector(
-                              onTap: () => isReviewsExpanded.toggle(),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          ),
+                          Obx(() => isReviewsExpanded.value
+                              ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(height: 16),
+                              Row(
                                 children: [
                                   Text(
-                                    'Reviews',
+                                    '4.9',
                                     style: TextStyle(
-                                      fontSize: 18,
+                                      fontSize: 36,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.black,
                                     ),
                                   ),
-                                  Obx(() => Icon(
-                                    isReviewsExpanded.value
-                                        ? Icons.keyboard_arrow_up
-                                        : Icons.keyboard_arrow_down,
-                                  )),
+                                  SizedBox(width: 8),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('OUT OF 5', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                                      Row(
+                                        children: List.generate(5, (index) => Icon(
+                                          Icons.star,
+                                          color: Colors.amber,
+                                          size: 16,
+                                        )),
+                                      ),
+                                    ],
+                                  ),
                                 ],
                               ),
-                            ),
-                            Obx(() => isReviewsExpanded.value
-                                ? Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(height: 16),
-                                Row(
-                                  children: [
-                                    Text(
-                                      '4.9',
-                                      style: TextStyle(
-                                        fontSize: 36,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black,
-                                      ),
-                                    ),
-                                    SizedBox(width: 8),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text('OUT OF 5', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-                                        Row(
-                                          children: List.generate(5, (index) => Icon(
-                                            Icons.star,
-                                            color: Colors.amber,
-                                            size: 16,
-                                          )),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 16),
-
-                                // Rating bars
-                                ...List.generate(5, (index) {
-                                  List<String> percentages = ['80%', '15%', '3%', '1%', '0%'];
-                                  List<double> widthFactors = [0.8, 0.15, 0.03, 0.01, 0.0];
-                                  return Padding(
-                                    padding: EdgeInsets.only(bottom: 8),
-                                    child: Row(
-                                      children: [
-                                        Text('${5-index}'),
-                                        SizedBox(width: 8),
-                                        Icon(Icons.star, size: 16, color: Colors.grey[400]),
-                                        SizedBox(width: 8),
-                                        Expanded(
-                                          child: Container(
-                                            height: 6,
-                                            decoration: BoxDecoration(
-                                              color: Colors.grey[200],
-                                              borderRadius: BorderRadius.circular(3),
-                                            ),
-                                            child: FractionallySizedBox(
-                                              alignment: Alignment.centerLeft,
-                                              widthFactor: widthFactors[index],
-                                              child: Container(
-                                                decoration: BoxDecoration(
-                                                  color: Color(0xFF10B981),
-                                                  borderRadius: BorderRadius.circular(3),
-                                                ),
+                              SizedBox(height: 16),
+                              ...List.generate(5, (index) {
+                                List<String> percentages = ['80%', '15%', '3%', '1%', '0%'];
+                                List<double> widthFactors = [0.8, 0.15, 0.03, 0.01, 0.0];
+                                return Padding(
+                                  padding: EdgeInsets.only(bottom: 8),
+                                  child: Row(
+                                    children: [
+                                      Text('${5-index}'),
+                                      SizedBox(width: 8),
+                                      Icon(Icons.star, size: 16, color: Colors.grey[400]),
+                                      SizedBox(width: 8),
+                                      Expanded(
+                                        child: Container(
+                                          height: 6,
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[200],
+                                            borderRadius: BorderRadius.circular(3),
+                                          ),
+                                          child: FractionallySizedBox(
+                                            alignment: Alignment.centerLeft,
+                                            widthFactor: widthFactors[index],
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                color: Color(0xFF10B981),
+                                                borderRadius: BorderRadius.circular(3),
                                               ),
                                             ),
                                           ),
                                         ),
-                                        SizedBox(width: 8),
-                                        Text(percentages[index], style: TextStyle(fontSize: 12)),
-                                      ],
-                                    ),
-                                  );
-                                }),
-                                SizedBox(height: 16),
-
-                                Text(
-                                  '47 Reviews',
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 14,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text(percentages[index], style: TextStyle(fontSize: 12)),
+                                    ],
                                   ),
+                                );
+                              }),
+                              SizedBox(height: 16),
+                              Text(
+                                '47 Reviews',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 14,
                                 ),
-                                SizedBox(height: 16),
-                                _buildReview('Jennifer Rose', 5, 'Stunning colors and high-quality fabric.'),
-                                SizedBox(height: 12),
-                                _buildReview('Kelly Rihanna', 5, 'Chic design with lavish texture.'),
-                              ],
-                            )
-                                : SizedBox()),
-                            SizedBox(height: 100),
-                          ],
-                        ),
+                              ),
+                              SizedBox(height: 16),
+                              _buildReview('Jennifer Rose', 5, 'Stunning colors and high-quality fabric.'),
+                              SizedBox(height: 12),
+                              _buildReview('Kelly Rihanna', 5, 'Chic design with lavish texture.'),
+                            ],
+                          )
+                              : SizedBox()),
+                          SizedBox(height: 100),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
-
-          // Top navigation - only back button
-          Positioned(
-            top: 40,
-            left: 16,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.2),
-                    spreadRadius: 1,
-                    blurRadius: 5,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: IconButton(
-                icon: Icon(Icons.arrow_back_ios, color: Colors.black),
-                onPressed: () => Get.back(),
               ),
             ),
-          ),
-
-          // Heart icon - positioned on main image
-          Positioned(
-            top: 60,
-            left: 50,
-            child: Obx(() => Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.2),
-                    spreadRadius: 1,
-                    blurRadius: 3,
-                    offset: Offset(0, 1),
-                  ),
-                ],
-              ),
-              child: IconButton(
-                padding: EdgeInsets.zero,
-                icon: Icon(
-                  controller.isFavorite.value ? Icons.favorite : Icons.favorite_border,
-                  color: controller.isFavorite.value ? Colors.red : Colors.grey[600],
-                  size: 18,
+          ],
+        ),
+        Positioned(
+          top: 40,
+          left: 16,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.2),
+                  spreadRadius: 1,
+                  blurRadius: 5,
+                  offset: Offset(0, 2),
                 ),
-                onPressed: () => controller.toggleFavorite(),
-              ),
-            )),
+              ],
+            ),
+            child: IconButton(
+              icon: Icon(Icons.arrow_back_ios, color: Colors.black),
+              onPressed: () => Get.back(),
+            ),
           ),
-        ],
-      ),
+        ),
+        Positioned(
+          top: 60,
+          left: 50,
+          child: Obx(() => Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.2),
+                  spreadRadius: 1,
+                  blurRadius: 3,
+                  offset: Offset(0, 1),
+                ),
+              ],
+            ),
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              icon: Icon(
+                controller.isFavorite.value ? Icons.favorite : Icons.favorite_border,
+                color: controller.isFavorite.value ? Colors.red : Colors.grey[600],
+                size: 18,
+              ),
+              onPressed: () => controller.toggleFavorite(),
+            ),
+          )),
+        ),
+      ],
     );
   }
 
@@ -939,20 +1220,9 @@ class SingleProductView extends StatelessWidget {
     );
   }
 
-  // Fixed Similar Products Card with Dynamic Content
   Widget _buildSimilarProductCard(WomenProduct product, SingleProductController controller) {
-    // Debug print to check product data
-    print('Building similar product card for: ${product.name}');
-    print('Product ID: ${product.id}');
-    print('Image URLs: ${product.imageUrls}');
-    print('Main Image: ${product.image}');
-    print('Price: ${product.price}');
-
     return GestureDetector(
       onTap: () {
-        print('Tapped on similar product: ${product.name}');
-
-        // Create a new SingleProductView with the selected product
         Get.to(
               () => SingleProductView(),
           arguments: {'product': product},
@@ -976,7 +1246,6 @@ class SingleProductView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Product Image Section
             Expanded(
               flex: 3,
               child: Container(
@@ -991,7 +1260,6 @@ class SingleProductView extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                       child: _buildProductImage(product),
                     ),
-                    // Multi-image indicator
                     if (product.imageUrls?.isNotEmpty == true && product.imageUrls!.length > 1)
                       Positioned(
                         top: 6,
@@ -1027,8 +1295,6 @@ class SingleProductView extends StatelessWidget {
                 ),
               ),
             ),
-
-            // Product Details Section
             Expanded(
               flex: 2,
               child: Padding(
@@ -1037,7 +1303,6 @@ class SingleProductView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Product Name
                     Text(
                       _getProductName(product),
                       style: TextStyle(
@@ -1049,10 +1314,7 @@ class SingleProductView extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-
                     SizedBox(height: 6),
-
-                    // Product Category/Type
                     if (product.dressType != null && product.dressType!.isNotEmpty)
                       Text(
                         product.dressType!,
@@ -1064,10 +1326,7 @@ class SingleProductView extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-
                     SizedBox(height: 8),
-
-                    // Price Section
                     Row(
                       children: [
                         Text(
@@ -1099,18 +1358,14 @@ class SingleProductView extends StatelessWidget {
     );
   }
 
-  // Helper Methods for Dynamic Content
   Widget _buildProductImage(WomenProduct product) {
     String imageUrl = '';
 
-    // Priority: imageUrls list first, then main image
     if (product.imageUrls?.isNotEmpty == true) {
       imageUrl = product.imageUrls!.first;
     } else if (product.image.isNotEmpty) {
       imageUrl = product.image;
     }
-
-    print('Loading image: $imageUrl');
 
     if (imageUrl.isEmpty) {
       return _buildImagePlaceholder(product);
@@ -1137,7 +1392,6 @@ class SingleProductView extends StatelessWidget {
         );
       },
       errorBuilder: (context, error, stackTrace) {
-        print('Error loading image: $error');
         return _buildImagePlaceholder(product);
       },
     );
@@ -1186,7 +1440,6 @@ class SingleProductView extends StatelessWidget {
     if (product.price != null) {
       return '₹${product.price}';
     } else {
-      // Generate consistent price based on product ID
       int basePrice = ((product.id.hashCode.abs() % 2500) + 500);
       return '₹$basePrice';
     }

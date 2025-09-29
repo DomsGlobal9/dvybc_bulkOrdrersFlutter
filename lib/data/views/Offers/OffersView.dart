@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../Favorites/FavoritesController.dart';
-import '../home/homeScreen.dart';
-//import 'custom_app_bar.dart'; // Assuming the path to your CustomAppBar file
+import '../../Controllers/HomeController.dart';
+import '../home/CustomAppBar.dart';
+import '../home/homeScreen.dart' hide HomeController;
+
 
 
 

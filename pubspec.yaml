@@ -32,6 +32,9 @@ dependencies:
   # Image loading and caching for Firebase images
   cached_network_image: ^3.3.1
 
+  #Shimmer
+  shimmer: ^3.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

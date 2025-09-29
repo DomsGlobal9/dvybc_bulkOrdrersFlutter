@@ -6,28 +6,24 @@ import '../../Cart/CartController.dart';
 import '../../Favorites/FavoritesController.dart';
 import '../../model/Women/WomenModel.dart';
 
-// Updated SingleProductController for nested Firebase structure with multiple selection
+// Updated SingleProductController with loading state
 class SingleProductController extends GetxController {
   final Rx<WomenProduct?> currentProduct = Rx<WomenProduct?>(null);
-
-  // Changed to support multiple selected sizes
-  final RxList<String> selectedSizes = <String>['M'].obs; // Multiple sizes
-  final RxMap<String, int> selectedSizeQuantities = <String, int>{'M': 1}.obs; // Size -> Quantity mapping
-
+  final RxList<String> selectedSizes = <String>['M'].obs;
+  final RxMap<String, int> selectedSizeQuantities = <String, int>{'M': 1}.obs;
   final Rx<Color> selectedColor = Colors.red.obs;
   final RxBool isFavorite = false.obs;
   final RxInt quantity = 1.obs;
   final RxList<WomenProduct> similarProducts = <WomenProduct>[].obs;
   final RxBool isLoadingSimilar = false.obs;
+  final RxBool isLoading = true.obs; // Main loading state for shimmer
   final RxString error = ''.obs;
 
   StreamSubscription<QuerySnapshot>? _similarProductsSubscription;
 
-  // Get controller instances with lazy initialization
   FavoritesController get _favoritesController => Get.put(FavoritesController());
   CartController get _cartController => Get.put(CartController());
 
-  // Available options - Updated to include 3XL and 4XL
   final List<String> availableSizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL'];
   final List<Color> availableColors = [
     Colors.red,
@@ -38,42 +34,45 @@ class SingleProductController extends GetxController {
     Colors.pink,
   ];
 
-  void initializeProduct(WomenProduct product) {
+  void initializeProduct(WomenProduct product) async {
+    isLoading.value = true;
+
     currentProduct.value = product;
-    // Reset to default single selection
     selectedSizes.value = ['M'];
     selectedSizeQuantities.value = {'M': 1};
 
-    // Check if product is already in favorites
     isFavorite.value = _favoritesController.isWomenProductFavorited(product);
+
+    // Load similar products
     loadSimilarProducts(product);
+
+    // Minimum loading time for smooth UX
+    await Future.delayed(Duration(milliseconds: 800));
+
+    isLoading.value = false;
   }
 
   void loadSimilarProducts(WomenProduct product) {
     isLoadingSimilar.value = true;
     error.value = '';
-    similarProducts.clear(); // Clear previous results
+    similarProducts.clear();
 
-    // Cancel previous subscription if exists
     _similarProductsSubscription?.cancel();
 
     try {
       print('🔍 Loading similar products for: ${product.name}');
       print('Current product dressType: ${product.dressType}');
 
-      // Query similar products using collectionGroup from all users
       Query query = FirebaseFirestore.instance.collectionGroup('products');
 
-      // Filter by same dressType but exclude current product
       if (product.dressType != null && product.dressType!.isNotEmpty) {
         query = query.where('dressType', isEqualTo: product.dressType);
       } else {
-        // Fallback: filter by category
         query = query.where('category', isEqualTo: product.category);
       }
 
       _similarProductsSubscription = query
-          .limit(15) // Get more to have options after filtering
+          .limit(15)
           .snapshots()
           .listen(
             (QuerySnapshot snapshot) {
@@ -83,7 +82,6 @@ class SingleProductController extends GetxController {
 
           for (QueryDocumentSnapshot doc in snapshot.docs) {
             try {
-              // Skip the current product
               if (doc.id == product.id) {
                 print('⏭️ Skipping current product: ${doc.id}');
                 continue;
@@ -94,7 +92,6 @@ class SingleProductController extends GetxController {
 
               WomenProduct? similarProduct = _mapDocumentToWomenProduct(doc, data, userId);
               if (similarProduct != null) {
-                // Additional filtering for quality
                 if (similarProduct.name.isNotEmpty || (similarProduct.dressType?.isNotEmpty == true)) {
                   similarList.add(similarProduct);
                   print('✅ Added similar product: ${similarProduct.name}');
@@ -105,14 +102,12 @@ class SingleProductController extends GetxController {
             }
           }
 
-          // Shuffle for variety and limit to 8
           similarList.shuffle();
           similarProducts.value = similarList.take(8).toList();
           isLoadingSimilar.value = false;
 
           print('✅ Final similar products count: ${similarProducts.length}');
 
-          // If no similar products found after 3 seconds, try a broader search
           if (similarProducts.isEmpty) {
             print('🔄 No similar products found, trying broader search...');
             Timer(Duration(seconds: 3), () {
@@ -126,7 +121,6 @@ class SingleProductController extends GetxController {
           print('❌ Error loading similar products: $e');
           isLoadingSimilar.value = false;
 
-          // Only show fallback products after a delay
           Timer(Duration(seconds: 5), () {
             if (similarProducts.isEmpty) {
               _generateFallbackSimilarProducts(product);
@@ -138,7 +132,6 @@ class SingleProductController extends GetxController {
       print('❌ Exception in loadSimilarProducts: $e');
       isLoadingSimilar.value = false;
 
-      // Only show fallback products after a delay
       Timer(Duration(seconds: 5), () {
         if (similarProducts.isEmpty) {
           _generateFallbackSimilarProducts(product);
@@ -150,7 +143,6 @@ class SingleProductController extends GetxController {
   void _loadBroaderSimilarProducts(WomenProduct product) {
     print('🔍 Loading broader similar products...');
 
-    // Broader search without specific dressType filter
     Query query = FirebaseFirestore.instance.collectionGroup('products')
         .where('category', isEqualTo: product.category)
         .limit(10);
@@ -180,7 +172,6 @@ class SingleProductController extends GetxController {
         isLoadingSimilar.value = false;
         print('🔍 Broader search found: ${similarProducts.length} products');
       } else {
-        // Still no products found, generate fallback after delay
         Timer(Duration(seconds: 3), () {
           if (similarProducts.isEmpty) {
             _generateFallbackSimilarProducts(product);
@@ -200,10 +191,7 @@ class SingleProductController extends GetxController {
   void _generateFallbackSimilarProducts(WomenProduct product) {
     print('📝 Generating fallback similar products...');
 
-    // Create some realistic fallback similar products based on the current product
     List<WomenProduct> similar = [];
-
-    // Generate based on product type
     List<String> similarNames = [];
     List<String> similarTypes = [];
 
@@ -239,14 +227,14 @@ class SingleProductController extends GetxController {
       similar.add(WomenProduct(
         id: 'fallback_${i + 1}',
         name: similarNames[i],
-        image: '', // Empty image will show placeholder
+        image: '',
         category: product.category,
         description: 'Beautiful ${similarNames[i].toLowerCase()} with premium quality fabric and elegant design.',
         gender: product.gender,
         subcategory: product.subcategory,
         dressType: similarTypes[i],
-        price: (800 + (i * 200)), // Generate different prices
-        imageUrls: [], // Empty list will show placeholder
+        price: (800 + (i * 200)),
+        imageUrls: [],
       ));
     }
 
@@ -255,10 +243,8 @@ class SingleProductController extends GetxController {
     print('✅ Generated ${similar.length} fallback products');
   }
 
-  // Map Firestore document to WomenProduct
   WomenProduct? _mapDocumentToWomenProduct(QueryDocumentSnapshot doc, Map<String, dynamic> data, String userId) {
     try {
-      // Extract image URLs
       List<String> imageUrls = [];
       if (data['imageUrls'] is List) {
         imageUrls = List<String>.from(data['imageUrls']);
@@ -266,7 +252,6 @@ class SingleProductController extends GetxController {
         imageUrls = List<String>.from(data['imageURLs']);
       }
 
-      // Extract colors and sizes
       List<String> selectedColors = [];
       if (data['selectedColors'] is List) {
         selectedColors = List<String>.from(data['selectedColors']);
@@ -277,7 +262,6 @@ class SingleProductController extends GetxController {
         selectedSizes = List<String>.from(data['selectedSizes']);
       }
 
-      // Handle price
       int? price;
       if (data['price'] != null) {
         if (data['price'] is String) {
@@ -327,26 +311,21 @@ class SingleProductController extends GetxController {
     selectedColor.value = color;
   }
 
-  // Updated to handle single size selection from main UI
   void selectSize(String size) {
-    selectedSizes.value = [size]; // Single selection from main UI
-    selectedSizeQuantities.value = {size: 1}; // Default quantity 1
+    selectedSizes.value = [size];
+    selectedSizeQuantities.value = {size: 1};
   }
 
-  // Check if a size is selected
   bool isSizeSelected(String size) {
     return selectedSizes.contains(size);
   }
 
   void toggleFavorite() {
     if (currentProduct.value != null) {
-      // Toggle in favorites controller
       _favoritesController.toggleWomenProductFavorite(
         currentProduct.value!,
         getRandomPrice(),
       );
-
-      // Update local state
       isFavorite.value = _favoritesController.isWomenProductFavorited(currentProduct.value!);
     }
   }
@@ -361,16 +340,13 @@ class SingleProductController extends GetxController {
     }
   }
 
-  // Updated addToCart method to show modal
   void addToCart() {
     if (currentProduct.value != null) {
       _showAddToCartModal();
     }
   }
 
-  // Updated method to show the add to cart modal with multiple selection support
   void _showAddToCartModal() {
-    // Pass the first selected size as current, or 'M' if none selected
     String currentSize = selectedSizes.isNotEmpty ? selectedSizes.first : 'M';
 
     Get.bottomSheet(
@@ -378,19 +354,15 @@ class SingleProductController extends GetxController {
         currentSelectedSize: currentSize,
         currentSelections: Map<String, int>.from(selectedSizeQuantities),
         onAddToCart: (Map<String, int> selectedSizesWithQuantities) {
-          // Update the selected sizes and quantities from modal
           selectedSizes.value = selectedSizesWithQuantities.keys.toList();
           selectedSizeQuantities.value = selectedSizesWithQuantities;
 
-          // Update total quantity for display
           int totalQuantity = selectedSizesWithQuantities.values.fold(0, (sum, qty) => sum + qty);
           quantity.value = totalQuantity;
 
-          // Add each selected size and quantity combination to cart
           for (String size in selectedSizesWithQuantities.keys) {
             int quantity = selectedSizesWithQuantities[size]!;
 
-            // Add to cart multiple times for each quantity
             for (int i = 0; i < quantity; i++) {
               _cartController.addWomenProductToCart(
                 currentProduct.value!,
@@ -401,7 +373,6 @@ class SingleProductController extends GetxController {
             }
           }
 
-          // Create summary message
           String summaryMessage = '';
           List<String> sizeSummaries = [];
 
@@ -427,13 +398,10 @@ class SingleProductController extends GetxController {
   }
 
   void buyNow() {
-    // Validate selection for non-saree items
     if (!currentProduct.value!.name.toLowerCase().contains('saree') && selectedSizes.isEmpty) {
-
       return;
     }
 
-    // Add to cart first - use first selected size
     if (currentProduct.value != null && selectedSizes.isNotEmpty) {
       _cartController.addWomenProductToCart(
         currentProduct.value!,
@@ -443,9 +411,6 @@ class SingleProductController extends GetxController {
       );
     }
 
-
-
-    // Navigate to cart/checkout
     Future.delayed(Duration(seconds: 1), () {
       Get.toNamed('/cart');
     });
@@ -459,14 +424,13 @@ class SingleProductController extends GetxController {
   }
 
   String getRandomPrice() {
-    // Generate random price based on product type
     List<int> prices = [299, 399, 499, 599, 699, 799, 899, 999, 1199, 1299, 1499, 1699, 1899, 2099, 2299];
     return prices[currentProduct.value!.id.hashCode.abs() % prices.length].toString();
   }
 
   String getRandomOriginalPrice() {
     int currentPrice = int.parse(getRandomPrice());
-    int originalPrice = (currentPrice * 1.4).round(); // 40% markup
+    int originalPrice = (currentPrice * 1.4).round();
     return originalPrice.toString();
   }
 
@@ -484,7 +448,7 @@ class SingleProductController extends GetxController {
   }
 }
 
-// Add to Cart Modal Widget with Multiple Selection and Editable Units
+// Add to Cart Modal Widget
 class AddToCartModal extends StatelessWidget {
   final Function(Map<String, int> selectedSizesWithQuantities) onAddToCart;
   final String currentSelectedSize;
@@ -503,7 +467,6 @@ class AddToCartModal extends StatelessWidget {
     final RxMap<String, int> sizeQuantities = <String, int>{}.obs;
     final Map<String, TextEditingController> controllers = {};
 
-    // Size data with availability
     final List<Map<String, dynamic>> sizeData = [
       {'size': 'XS', 'available': 12},
       {'size': 'S', 'available': 1},
@@ -515,7 +478,6 @@ class AddToCartModal extends StatelessWidget {
       {'size': '4XL', 'available': 1},
     ];
 
-    // Initialize controllers and set current selections
     for (var sizeInfo in sizeData) {
       String size = sizeInfo['size'];
       int currentQty = currentSelections[size] ?? 0;
@@ -538,7 +500,6 @@ class AddToCartModal extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Handle bar
           Container(
             width: 40,
             height: 4,
@@ -548,8 +509,6 @@ class AddToCartModal extends StatelessWidget {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-
-          // Header with close button
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
@@ -577,13 +536,10 @@ class AddToCartModal extends StatelessWidget {
               ],
             ),
           ),
-
-          // Size and Quantity Grid
           Padding(
             padding: EdgeInsets.all(16),
             child: Column(
               children: [
-                // Size options with structured layout
                 Obx(() => Column(
                   children: sizeData.map((sizeInfo) {
                     String size = sizeInfo['size'];
@@ -603,7 +559,6 @@ class AddToCartModal extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          // Checkbox for selection
                           GestureDetector(
                             onTap: () {
                               if (isSelected) {
@@ -628,18 +583,11 @@ class AddToCartModal extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(3),
                               ),
                               child: isSelected
-                                  ? Icon(
-                                Icons.check,
-                                color: Colors.white,
-                                size: 14,
-                              )
+                                  ? Icon(Icons.check, color: Colors.white, size: 14)
                                   : null,
                             ),
                           ),
-
                           SizedBox(width: 12),
-
-                          // Size
                           Container(
                             width: 40,
                             child: Text(
@@ -651,35 +599,18 @@ class AddToCartModal extends StatelessWidget {
                               ),
                             ),
                           ),
-
                           SizedBox(width: 20),
-
-                          // Available section
                           Expanded(
                             flex: 2,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  'E.x',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
+                                Text('E.x', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
                                 SizedBox(height: 2),
-                                Text(
-                                  'Available',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey[500],
-                                  ),
-                                ),
+                                Text('Available', style: TextStyle(fontSize: 11, color: Colors.grey[500])),
                               ],
                             ),
                           ),
-
-                          // Available count
                           Container(
                             width: 30,
                             child: Text(
@@ -692,10 +623,7 @@ class AddToCartModal extends StatelessWidget {
                               textAlign: TextAlign.center,
                             ),
                           ),
-
                           SizedBox(width: 20),
-
-                          // Units input field
                           Container(
                             width: 60,
                             height: 35,
@@ -727,31 +655,21 @@ class AddToCartModal extends StatelessWidget {
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(4),
-                                  borderSide: BorderSide(
-                                    color: Color(0xFF094D77),
-                                    width: 2,
-                                  ),
+                                  borderSide: BorderSide(color: Color(0xFF094D77), width: 2),
                                 ),
                                 disabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(4),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey[300]!,
-                                    width: 1,
-                                  ),
+                                  borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
                                 ),
                                 filled: true,
                                 fillColor: isSelected ? Color(0xFF98C0D9).withOpacity(0.3) : Colors.grey[100],
                                 hintText: '0',
-                                hintStyle: TextStyle(
-                                  color: Colors.grey[400],
-                                  fontSize: 14,
-                                ),
+                                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
                               ),
                               onChanged: (value) {
                                 int quantity = int.tryParse(value) ?? 0;
                                 sizeQuantities[size] = quantity;
 
-                                // Auto-select/deselect based on quantity
                                 if (quantity > 0 && !selectedSizes.contains(size)) {
                                   selectedSizes.add(size);
                                 } else if (quantity == 0 && selectedSizes.contains(size)) {
@@ -760,32 +678,19 @@ class AddToCartModal extends StatelessWidget {
                               },
                             ),
                           ),
-
                           SizedBox(width: 8),
-
-                          // Units label
-                          Text(
-                            'Units',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                          ),
+                          Text('Units', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
                         ],
                       ),
                     );
                   }).toList(),
                 )),
-
                 SizedBox(height: 32),
-
-                // Save Changes Button with exact specifications
                 Container(
                   width: 203,
                   height: 48,
                   child: ElevatedButton(
                     onPressed: () {
-                      // Get all selected sizes with their quantities
                       Map<String, int> selectedSizesWithQuantities = {};
                       for (String size in selectedSizes) {
                         int quantity = sizeQuantities[size] ?? 0;
@@ -797,27 +702,17 @@ class AddToCartModal extends StatelessWidget {
                       if (selectedSizesWithQuantities.isNotEmpty) {
                         onAddToCart(selectedSizesWithQuantities);
                         Navigator.pop(context);
-
                       }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Color(0xFF094D77),
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                       elevation: 0,
                     ),
-                    child: Text(
-                      'Save change',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    child: Text('Save change', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                   ),
                 ),
-
                 SizedBox(height: 20),
               ],
             ),

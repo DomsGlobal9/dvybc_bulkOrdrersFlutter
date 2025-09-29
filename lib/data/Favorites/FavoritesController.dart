@@ -71,7 +71,7 @@ class WomenProductAdapter implements FavoriteItem {
 }
 
 class FavoritesController extends GetxController {
-  // Observable list to store favorite products (unified interface)
+  // Observable list to store favorite products (unified inxterface)
   var favoriteProducts = <FavoriteItem>[].obs;
 
   // Add product to favorites
@@ -79,16 +79,7 @@ class FavoritesController extends GetxController {
     if (!favoriteProducts.any((p) => p.id == product.id)) {
       product.isFavorited = true;
       favoriteProducts.add(product);
-      Get.snackbar(
-        'Added to Wishlist',
-        '${product.title} has been added to your wishlist',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Color(0xFF1976D2),
-        colorText: Colors.white,
-        duration: Duration(seconds: 2),
-        margin: EdgeInsets.all(16),
-        borderRadius: 8,
-      );
+
     }
   }
 
@@ -96,16 +87,6 @@ class FavoritesController extends GetxController {
   void removeFromFavorites(FavoriteItem product) {
     product.isFavorited = false;
     favoriteProducts.removeWhere((p) => p.id == product.id);
-    Get.snackbar(
-      'Removed from Wishlist',
-      '${product.title} has been removed from your wishlist',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.red[400],
-      colorText: Colors.white,
-      duration: Duration(seconds: 2),
-      margin: EdgeInsets.all(16),
-      borderRadius: 8,
-    );
   }
 
   // Toggle favorite status
@@ -128,16 +109,7 @@ class FavoritesController extends GetxController {
       product.isFavorited = false;
     }
     favoriteProducts.clear();
-    Get.snackbar(
-      'Cleared Wishlist',
-      'All items removed from your wishlist',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.orange[400],
-      colorText: Colors.white,
-      duration: Duration(seconds: 2),
-      margin: EdgeInsets.all(16),
-      borderRadius: 8,
-    );
+
   }
 
   // Helper methods for easy integration
