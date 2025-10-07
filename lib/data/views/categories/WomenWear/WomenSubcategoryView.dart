@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../home/homeScreen.dart';
+import '../../Widgets/CustomDVYBAppBarWithBack.dart';
 
 // Subcategory Data Model
 class SubcategoryData {
@@ -99,8 +99,8 @@ class WomenSubcategoryView extends StatelessWidget {
     final List<SubcategoryData> subcategories = subcategoryData[mainCategory] ?? [];
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: _buildCustomAppBar(),
+      backgroundColor: Colors.white,
+      appBar: CustomDVYBAppBar(),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -156,43 +156,7 @@ class WomenSubcategoryView extends StatelessWidget {
     );
   }
 
-  PreferredSizeWidget _buildCustomAppBar() {
-    return AppBar(
-      elevation: 0,
-      backgroundColor: Colors.white,
-      leading: IconButton(
-        icon: Container(
-          padding: EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            Icons.arrow_back_ios,
-            color: Colors.black87,
-            size: 18,
-          ),
-        ),
-        onPressed: () {
-          // Use the callback or fallback to Get.back()
-          if (onBackPressed != null) {
-            onBackPressed!();
-          } else {
-            Get.back();
-          }
-        },
-      ),
-      title: Text(
-        mainCategory,
-        style: TextStyle(
-          color: Colors.black87,
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      centerTitle: true,
-    );
-  }
+
 
   Widget _buildSubcategoryCard(SubcategoryData subcategory) {
     return GestureDetector(

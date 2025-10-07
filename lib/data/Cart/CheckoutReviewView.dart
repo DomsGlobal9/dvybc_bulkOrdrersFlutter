@@ -265,14 +265,14 @@ class CheckoutReviewView extends StatelessWidget {
                         color: Colors.grey[600],
                       ),
                     ),
-                    Text(
-                      item.selectedSize ?? 'Free',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
+                    // Text(
+                    //   item.selectedSize ?? 'Free',
+                    //   style: TextStyle(
+                    //     fontSize: 14,
+                    //     fontWeight: FontWeight.w600,
+                    //     color: Colors.black87,
+                    //   ),
+                    // ),
                     SizedBox(width: 24),
                     Text(
                       'Qty: ',

@@ -204,9 +204,16 @@ class CustomTabView extends StatelessWidget {
           height: 50,
           padding: EdgeInsets.symmetric(horizontal: isSelected ? 18.0 : 12.0),
           decoration: BoxDecoration(
-            color: isSelected ? Color(0xFF2196F3) : Colors.transparent,
+            gradient: isSelected
+                ? LinearGradient(
+              colors: [Color(0xFF2087C8), Color(0xFF1579B8)],
+            )
+                : LinearGradient(
+              colors: [Colors.transparent, Colors.transparent],
+            ),
             borderRadius: BorderRadius.circular(25.0),
           ),
+
           child: Row(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
@@ -214,7 +221,7 @@ class CustomTabView extends StatelessWidget {
               Image.asset(
                 iconAsset,
                 width: 28, // Good, visible icon size
-                height: 28,
+                height: 25,
                 color: isSelected ? Colors.white : Colors.grey[700],
               ),
               // Use AnimatedSize to smoothly show/hide the text

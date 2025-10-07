@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../model/Women/WomenModel.dart';
 import '../../../viewModel/Women/ProductDetailViewModel.dart';
+import '../../home/CustomAppBar.dart';
 
 class ProductDetailView extends StatelessWidget {
   const ProductDetailView({Key? key}) : super(key: key);
@@ -18,364 +19,170 @@ class ProductDetailView extends StatelessWidget {
     });
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: _buildCustomAppBar(productName),
+      backgroundColor: Colors.white,
+      appBar: CustomAppBar(),
       body: Obx(() {
         if (controller.isLoading.value) {
           return _buildShimmerLoading();
         }
 
-        return SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      spreadRadius: 1,
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Color(0xFF3B82F6).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            category.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF3B82F6),
-                            ),
-                          ),
-                        ),
-                        Obx(() => controller.activeFilterCount.value > 0
-                            ? Container(
-                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Color(0xFF10B981),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${controller.activeFilterCount.value} Filter${controller.activeFilterCount.value > 1 ? 's' : ''} Active',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                        )
-                            : SizedBox.shrink()),
-                      ],
-                    ),
-                    SizedBox(height: 12),
-                    Text(
+        return Column(
+          children: [
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              color: Colors.white,
+              child: Row(
+                children: [
+                  // Back button
+                  IconButton(
+                    icon: Icon(Icons.arrow_back, color: Colors.black),
+                    onPressed: () => Get.back(),
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(),
+                  ),
+                  SizedBox(width: 12),
+                  // Product name
+                  Expanded(
+                    child: Text(
                       productName,
                       style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                        fontFamily: 'Outfit',
                       ),
                     ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Explore ${controller.filteredProducts.length} beautiful variations',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 16),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 45,
-                        child: TextField(
-                          decoration: InputDecoration(
-                            hintText: 'Search variations...',
-                            prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(25),
-                              borderSide: BorderSide.none,
-                            ),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          ),
-                          onChanged: (value) => controller.searchProducts(value),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Obx(() => GestureDetector(
-                      onTap: () => controller.openFilterModal(),
-                      child: Container(
-                        height: 45,
-                        width: 45,
-                        decoration: BoxDecoration(
-                          color: controller.activeFilterCount.value > 0
-                              ? Color(0xFF3B82F6)
-                              : Colors.white,
-                          borderRadius: BorderRadius.circular(25),
-                          border: Border.all(
-                            color: controller.activeFilterCount.value > 0
-                                ? Color(0xFF3B82F6)
-                                : Colors.grey[300]!,
-                          ),
-                          boxShadow: controller.activeFilterCount.value > 0
-                              ? [
-                            BoxShadow(
-                              color: Color(0xFF3B82F6).withOpacity(0.3),
-                              spreadRadius: 1,
-                              blurRadius: 4,
-                              offset: Offset(0, 2),
-                            ),
-                          ]
-                              : null,
-                        ),
-                        child: Stack(
-                          children: [
-                            Center(
-                              child: Icon(
-                                Icons.tune,
-                                color: controller.activeFilterCount.value > 0
-                                    ? Colors.white
-                                    : Color(0xFF3B82F6),
-                                size: 20,
-                              ),
-                            ),
-                            if (controller.activeFilterCount.value > 0)
-                              Positioned(
-                                top: 6,
-                                right: 6,
-                                child: Container(
-                                  width: 14,
-                                  height: 14,
-                                  decoration: BoxDecoration(
-                                    color: Color(0xFF10B981),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      controller.activeFilterCount.value.toString(),
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 8,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    )),
-                  ],
-                ),
-              ),
-              SizedBox(height: 12),
-              Obx(() => controller.activeFilterCount.value > 0
-                  ? Container(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    TextButton.icon(
-                      onPressed: () => controller.clearAllFilters(),
-                      icon: Icon(Icons.clear, size: 16, color: Colors.red),
-                      label: Text(
-                        'Clear All Filters',
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      style: TextButton.styleFrom(
-                        backgroundColor: Colors.red.withOpacity(0.1),
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                    ),
-                    Spacer(),
-                    Text(
-                      'Showing ${controller.filteredProducts.length} products',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-                  : SizedBox.shrink()),
-              SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: controller.filteredProducts.isEmpty
-                    ? SizedBox() // or Container() if you want just empty space
-                    : GridView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 0.65,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
                   ),
-                  itemCount: controller.filteredProducts.length,
-                  itemBuilder: (context, index) {
-                    return _buildProductCard(controller.filteredProducts[index]);
-                  },
-                ),
+                  // Filter button
+                  GestureDetector(
+                    onTap: () => controller.openFilterModal(),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Color(0xFF447B9E),
+                          width: 0.6,
+                        ),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.tune,
+                            color: Color(0xFF447B9E),
+                            size: 18,
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            'Filter',
+                            style: TextStyle(
+                              color: Color(0xFF447B9E),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              fontFamily: 'Outfit',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
+            ),
 
-              SizedBox(height: 20),
-            ],
-          ),
+            // Product Grid
+            Expanded(
+              child: controller.filteredProducts.isEmpty
+                  ? SizedBox()
+                  : GridView.builder(
+                padding: EdgeInsets.all(16),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 0.7,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
+                ),
+                itemCount: controller.filteredProducts.length,
+                itemBuilder: (context, index) {
+                  return _buildProductCard(controller.filteredProducts[index]);
+                },
+              ),
+            ),
+          ],
         );
       }),
     );
   }
 
   Widget _buildShimmerLoading() {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  spreadRadius: 1,
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
+    return Column(
+      children: [
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          color: Colors.white,
+          child: Row(
+            children: [
+              Shimmer.fromColors(
+                baseColor: Colors.grey[300]!,
+                highlightColor: Colors.grey[100]!,
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Shimmer.fromColors(
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Shimmer.fromColors(
                   baseColor: Colors.grey[300]!,
                   highlightColor: Colors.grey[100]!,
                   child: Container(
-                    width: 100,
                     height: 24,
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 12),
-                Shimmer.fromColors(
-                  baseColor: Colors.grey[300]!,
-                  highlightColor: Colors.grey[100]!,
-                  child: Container(
-                    width: double.infinity,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
                 ),
-                SizedBox(height: 8),
-                Shimmer.fromColors(
-                  baseColor: Colors.grey[300]!,
-                  highlightColor: Colors.grey[100]!,
-                  child: Container(
-                    width: 200,
-                    height: 16,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 16),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Shimmer.fromColors(
-                    baseColor: Colors.grey[300]!,
-                    highlightColor: Colors.grey[100]!,
-                    child: Container(
-                      height: 45,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 12),
-                Shimmer.fromColors(
-                  baseColor: Colors.grey[300]!,
-                  highlightColor: Colors.grey[100]!,
-                  child: Container(
-                    height: 45,
-                    width: 45,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 20),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: GridView.builder(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 0.65,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
               ),
-              itemCount: 6,
-              itemBuilder: (context, index) {
-                return _buildShimmerProductCard();
-              },
-            ),
+              SizedBox(width: 12),
+              Shimmer.fromColors(
+                baseColor: Colors.grey[300]!,
+                highlightColor: Colors.grey[100]!,
+                child: Container(
+                  width: 80,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+        Expanded(
+          child: GridView.builder(
+            padding: EdgeInsets.all(16),
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.7,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+            ),
+            itemCount: 6,
+            itemBuilder: (context, index) {
+              return _buildShimmerProductCard();
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -386,37 +193,27 @@ class ProductDetailView extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: Container(
-                margin: EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
             ),
             Padding(
-              padding: EdgeInsets.all(12),
+              padding: EdgeInsets.all(8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
                     width: double.infinity,
                     height: 14,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Container(
-                    width: 100,
-                    height: 12,
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(4),
@@ -458,6 +255,7 @@ class ProductDetailView extends StatelessWidget {
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: Colors.grey[600],
+              fontFamily: 'Outfit',
             ),
           ),
           SizedBox(height: 8),
@@ -466,6 +264,7 @@ class ProductDetailView extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey[500],
+              fontFamily: 'Outfit',
             ),
             textAlign: TextAlign.center,
           ),
@@ -473,7 +272,7 @@ class ProductDetailView extends StatelessWidget {
           ElevatedButton(
             onPressed: () => Get.find<ProductDetailController>().clearAllFilters(),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Color(0xFF3B82F6),
+              backgroundColor: Color(0xFF447B9E),
               padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25),
@@ -484,75 +283,12 @@ class ProductDetailView extends StatelessWidget {
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
+                fontFamily: 'Outfit',
               ),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  PreferredSizeWidget _buildCustomAppBar(String productName) {
-    return AppBar(
-      elevation: 0,
-      backgroundColor: Colors.white,
-      leading: IconButton(
-        icon: Container(
-          padding: EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            Icons.arrow_back_ios,
-            color: Colors.black87,
-            size: 18,
-          ),
-        ),
-        onPressed: () => Get.back(),
-      ),
-      title: Text(
-        productName,
-        style: TextStyle(
-          color: Colors.black87,
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      centerTitle: true,
-      actions: [
-        IconButton(
-          icon: Container(
-            padding: EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.favorite_border,
-              color: Colors.black87,
-              size: 20,
-            ),
-          ),
-          onPressed: () {},
-        ),
-        IconButton(
-          icon: Container(
-            padding: EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.share,
-              color: Colors.black87,
-              size: 20,
-            ),
-          ),
-          onPressed: () {},
-        ),
-        SizedBox(width: 8),
-      ],
     );
   }
 
@@ -566,12 +302,12 @@ class ProductDetailView extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
               color: Colors.grey.withOpacity(0.1),
               spreadRadius: 1,
-              blurRadius: 8,
+              blurRadius: 4,
               offset: Offset(0, 2),
             ),
           ],
@@ -580,75 +316,80 @@ class ProductDetailView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: Container(
-                margin: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: product.image.isNotEmpty
-                          ? Image.network(
-                        product.image,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: double.infinity,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: Colors.grey[200],
-                            child: Center(
-                              child: Icon(Icons.broken_image, size: 40, color: Colors.grey[400]),
-                            ),
-                          );
-                        },
-                      )
-                          : Container(
-                        color: Colors.grey[200],
-                        child: Center(
-                          child: Icon(Icons.image_not_supported, size: 40, color: Colors.grey[400]),
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(8),
+                      topRight: Radius.circular(8),
+                    ),
+                    child: product.image.isNotEmpty
+                        ? Image.network(
+                      product.image,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: double.infinity,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey[200],
+                          child: Center(
+                            child: Icon(Icons.broken_image, size: 40, color: Colors.grey[400]),
+                          ),
+                        );
+                      },
+                    )
+                        : Container(
+                      color: Colors.grey[200],
+                      child: Center(
+                        child: Icon(Icons.image_not_supported, size: 40, color: Colors.grey[400]),
+                      ),
+                    ),
+                  ),
+                  // Favorite button at top right
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.favorite_border,
+                        size: 18,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                  ),
+                  // Try on badge at bottom left
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    child: Container(
+                      width: 53,
+                      height: 18,
+                      decoration: BoxDecoration(
+                        color: Color(0xFFFFFAFA).withOpacity(0.8),
+                        borderRadius: BorderRadius.only(
+                          topRight: Radius.circular(4),
+                          bottomLeft: Radius.circular(4),
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Try on',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black87,
+                            fontFamily: 'Outfit',
+                          ),
                         ),
                       ),
                     ),
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Container(
-                        padding: EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Icon(
-                          Icons.favorite_border,
-                          size: 16,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ),
-                    if (product.id.hashCode % 3 == 0)
-                      Positioned(
-                        top: 8,
-                        left: 8,
-                        child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Color(0xFF10B981),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            'NEW',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
             Padding(
@@ -662,45 +403,20 @@ class ProductDetailView extends StatelessWidget {
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
+                      fontFamily: 'Outfit',
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 4),
+                  SizedBox(height: 6),
                   Text(
-                    product.description,
+                    '₹${product.price ?? (product.id.hashCode % 5000) + 500}',
                     style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF447B9E),
+                      fontFamily: 'Outfit',
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Free Size',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF3B82F6),
-                        ),
-                      ),
-                      Container(
-                        padding: EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Color(0xFF3B82F6),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Icon(
-                          Icons.arrow_forward_ios,
-                          size: 12,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),
@@ -711,3 +427,4 @@ class ProductDetailView extends StatelessWidget {
     );
   }
 }
+

@@ -114,7 +114,7 @@ class AppRoutes {
     ),
     GetPage(
       name: forgotPassword,
-      page: () => ForgotPasswordView(),
+      page: () => ForgotPasswordScreen(),
       transition: Transition.fade,
       transitionDuration: Duration(milliseconds: 300),
       binding: BindingsBuilder(() {

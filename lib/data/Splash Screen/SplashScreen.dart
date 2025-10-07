@@ -9,7 +9,6 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
-
   int _currentStep = 0; // 0 = first content, 1 = second content
 
   // Animation controllers
@@ -32,44 +31,43 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _initializeAnimations() {
-    // Logo animation controller (longer for complete sequence)
+    // Logo animation controller (for the initial logo sequence)
     _logoAnimationController = AnimationController(
-      duration: Duration(milliseconds: 3000),
+      duration: const Duration(milliseconds: 3000),
       vsync: this,
     );
 
-    // Fade animation controller
+    // Fade controller for transitioning from the logo screen to the onboarding screen
     _fadeAnimationController = AnimationController(
-      duration: Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 500),
       vsync: this,
     );
 
-    // Content change animation controller
+    // Content change animation controller (for switching between step 0 and 1)
     _contentAnimationController = AnimationController(
-      duration: Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 600),
       vsync: this,
     );
 
-    // Progress bar animation controller
+    // --- CORRECTED --- Progress bar animation controller (faster 0.5-second duration)
     _progressAnimationController = AnimationController(
-      duration: Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 500),
       vsync: this,
     );
 
-    // Logo scale animation - starts small, grows big, then vanishes
+    // Logo scale animation
     _logoScaleAnimation = Tween<double>(
       begin: 0.0,
       end: 1.2,
     ).animate(CurvedAnimation(
       parent: _logoAnimationController,
-      curve: Interval(0.0, 0.7, curve: Curves.elasticOut),
+      curve: const Interval(0.0, 0.7, curve: Curves.elasticOut),
     ));
 
-    // Logo fade animation - fades in, stays visible, then fades out
+    // Logo fade animation
     _logoFadeAnimation = TweenSequence<double>([
       TweenSequenceItem<double>(
-        tween: Tween<double>(begin: 0.0, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeIn)),
+        tween: Tween<double>(begin: 0.0, end: 1.0).chain(CurveTween(curve: Curves.easeIn)),
         weight: 30.0,
       ),
       TweenSequenceItem<double>(
@@ -77,13 +75,12 @@ class _SplashScreenState extends State<SplashScreen>
         weight: 40.0,
       ),
       TweenSequenceItem<double>(
-        tween: Tween<double>(begin: 1.0, end: 0.0)
-            .chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween<double>(begin: 1.0, end: 0.0).chain(CurveTween(curve: Curves.easeOut)),
         weight: 30.0,
       ),
     ]).animate(_logoAnimationController);
 
-    // General fade animation
+    // General fade animation for the onboarding screen
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -112,13 +109,13 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _startSplashSequence() async {
-    // Start logo animation (small to big to vanish)
+    // Start initial logo animation
     _logoAnimationController.forward();
 
-    // Wait for logo animation to complete
-    await Future.delayed(Duration(milliseconds: 3200));
+    // Wait for logo to finish before showing onboarding
+    await Future.delayed(const Duration(milliseconds: 3200));
 
-    // Move to onboarding content
+    // Fade in the onboarding content
     _fadeAnimationController.forward();
     _contentAnimationController.forward();
   }
@@ -129,35 +126,21 @@ class _SplashScreenState extends State<SplashScreen>
         _currentStep = 1;
       });
 
-      // Reset and start content animation
-      _contentAnimationController.reset();
-      _contentAnimationController.forward();
+      // Animate the content change
+      _contentAnimationController.forward(from: 0.0);
 
-      // Animate progress bar to fill completely
-      _progressAnimationController.forward();
-
+      // Animate the progress bar to fill
+      _progressAnimationController.forward(from: 0.0);
     } else {
-      // Start the app
+      // This case is handled by the "Start" button, but as a fallback
       _startApp();
     }
   }
 
   void _startApp() async {
-    try {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-
-      if (isLoggedIn) {
-        // Clear the login state for testing - remove this in production
-        await prefs.setBool('isLoggedIn', false);
-        Get.offAllNamed('/login');
-      } else {
-        Get.offAllNamed('/login');
-      }
-    } catch (e) {
-      print('Error checking login status: $e');
-      Get.offAllNamed('/login');
-    }
+    // In a real app, you would check the actual login state.
+    // For now, we'll always navigate to the login page as per your original code.
+    Get.offAllNamed('/login');
   }
 
   @override
@@ -176,13 +159,10 @@ class _SplashScreenState extends State<SplashScreen>
       body: AnimatedBuilder(
         animation: _fadeAnimationController,
         builder: (context, child) {
-          if (_fadeAnimationController.value == 0) {
-            // Show initial logo screen
-            return _buildLogoScreen();
-          } else {
-            // Show onboarding content
-            return _buildOnboardingContent();
-          }
+          // If the fade controller hasn't started, show the logo. Otherwise, show onboarding.
+          return _fadeAnimationController.isAnimating || _fadeAnimationController.value > 0
+              ? _buildOnboardingContent()
+              : _buildLogoScreen();
         },
       ),
     );
@@ -193,14 +173,11 @@ class _SplashScreenState extends State<SplashScreen>
       animation: _logoAnimationController,
       builder: (context, child) {
         return Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF87CEEB), // Sky blue
-                Color(0xFFB0E0E6), // Powder blue
-              ],
+              colors: [Color(0xFF87CEEB), Color(0xFFB0E0E6)],
             ),
           ),
           child: Center(
@@ -229,21 +206,15 @@ class _SplashScreenState extends State<SplashScreen>
         backgroundColor: Colors.white,
         body: Column(
           children: [
-            SizedBox(height: 80),
-
-            // Logo at top
+            const SizedBox(height: 80),
             Image.asset(
               'assets/images/DVYBL.png',
               width: 120,
               height: 60,
               fit: BoxFit.contain,
             ),
-
-            // Animated Progress indicator
-            SizedBox(height: 30),
+            const SizedBox(height: 30),
             _buildAnimatedProgressIndicator(),
-
-            // Main content with animations
             Expanded(
               child: AnimatedBuilder(
                 animation: _contentAnimationController,
@@ -255,27 +226,20 @@ class _SplashScreenState extends State<SplashScreen>
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Animated illustration
-                          Container(
-                            padding: EdgeInsets.all(40),
-                            child: Image.asset(
-                              _currentStep == 0
-                                  ? 'assets/images/splash1.png'
-                                  : 'assets/images/splash2.png',
-                              width: 300,
-                              height: 250,
-                              fit: BoxFit.contain,
-                            ),
+                          Image.asset(
+                            _currentStep == 0
+                                ? 'assets/images/splash1.png'
+                                : 'assets/images/splash2.png',
+                            width: 300,
+                            height: 250,
+                            fit: BoxFit.contain,
                           ),
-
-                          SizedBox(height: 40),
-
-                          // Animated title
+                          const SizedBox(height: 40),
                           Text(
                             _currentStep == 0
                                 ? 'Buy Every Fashion At Bulk'
                                 : 'Get Huge Discount On Your\nBulk Orders',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF2C2C2C),
@@ -289,13 +253,9 @@ class _SplashScreenState extends State<SplashScreen>
                 },
               ),
             ),
-
-            // Action button
             Padding(
-              padding: EdgeInsets.all(30),
-              child: _currentStep == 0
-                  ? _buildNextButton()
-                  : _buildStartButton(),
+              padding: const EdgeInsets.all(30),
+              child: _currentStep == 0 ? _buildNextButton() : _buildStartButton(),
             ),
           ],
         ),
@@ -303,7 +263,15 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 
+  // --- CORRECTED WIDGET ---
   Widget _buildAnimatedProgressIndicator() {
+    // Define styles to match your requirements
+    const double barWidth = 177.5; // (358 total width - 3 gap) / 2
+    const double barHeight = 6.0;
+    const double barGap = 3.0;
+    const Color activeColor = Color(0xFF4F9EBB);
+    const Color inactiveColor = Color(0xFFE0E0E6);
+
     return AnimatedBuilder(
       animation: _progressAnimationController,
       builder: (context, child) {
@@ -312,32 +280,31 @@ class _SplashScreenState extends State<SplashScreen>
           children: [
             // First progress bar (always active)
             Container(
-              height: 4,
-              width: 80,
+              height: barHeight,
+              width: barWidth,
               decoration: BoxDecoration(
-                color: Color(0xFF094D77),
-                borderRadius: BorderRadius.circular(2),
+                color: activeColor,
+                borderRadius: BorderRadius.circular(barHeight / 2),
               ),
             ),
-            SizedBox(width: 12),
-            // Second progress bar (animated fill)
+            const SizedBox(width: barGap),
+            // Second progress bar (background)
             Container(
-              height: 4,
-              width: 80,
+              height: barHeight,
+              width: barWidth,
               decoration: BoxDecoration(
-                color: Color(0xFFE0E0E6),
-                borderRadius: BorderRadius.circular(2),
+                color: inactiveColor,
+                borderRadius: BorderRadius.circular(barHeight / 2),
               ),
+              // The animated fill is now a simple, efficient Container
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: AnimatedContainer(
-                  duration: Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                  height: 4,
-                  width: 80 * _progressAnimation.value,
+                child: Container(
+                  height: barHeight,
+                  width: barWidth * _progressAnimation.value,
                   decoration: BoxDecoration(
-                    color: Color(0xFF094D77),
-                    borderRadius: BorderRadius.circular(2),
+                    color: activeColor,
+                    borderRadius: BorderRadius.circular(barHeight / 2),
                   ),
                 ),
               ),
@@ -354,26 +321,26 @@ class _SplashScreenState extends State<SplashScreen>
       child: GestureDetector(
         onTap: _nextStep,
         child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(25),
+            color: const Color(0xFFEAF3F7),
+            borderRadius: BorderRadius.circular(50),
           ),
-          child: Row(
+          child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 'Next',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Color(0xFF666666),
-                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF294F5E),
+                  fontWeight: FontWeight.bold,
                 ),
               ),
               SizedBox(width: 8),
               Icon(
                 Icons.arrow_forward,
-                color: Color(0xFF666666),
+                color: Color(0xFF294F5E),
                 size: 20,
               ),
             ],
@@ -389,13 +356,13 @@ class _SplashScreenState extends State<SplashScreen>
       child: ElevatedButton(
         onPressed: _startApp,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Color(0xFF094D77),
-          padding: EdgeInsets.symmetric(vertical: 16),
+          backgroundColor: const Color(0xFF094D77),
+          padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
         ),
-        child: Row(
+        child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
