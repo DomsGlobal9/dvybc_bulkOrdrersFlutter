@@ -102,7 +102,7 @@ class VirtualTryOnController extends GetxController {
         return;
       }
 
-      statusMessage.value = "Uploading to FASHN AI...";
+      statusMessage.value = "Processing Your try on ";
 
       // Submit to API
       await _submitToAPI(modelBase64, garmentBase64);
@@ -173,7 +173,7 @@ class VirtualTryOnController extends GetxController {
           _showError('Invalid response from API');
         }
       } else {
-        _showError('API request failed: ${response.statusCode}');
+        _showError('failed: ${response.statusCode}');
       }
     } catch (e) {
       _showError('Connection failed: $e');

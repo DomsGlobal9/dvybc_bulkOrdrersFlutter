@@ -1,11 +1,11 @@
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../main.dart';
-import '../Cart/CheckoutAddressView.dart';
-import '../Cart/CheckoutPaymentView.dart';
-import '../Cart/CheckoutReviewView.dart';
+import '../Cart/Address/CheckoutAddressView.dart';
+import '../Cart/payment/CheckoutPaymentView.dart';
+import '../Cart/Checkout/CheckoutReviewView.dart';
 import '../Favorites/FavoritesView.dart';
-import '../Controllers/FilterController.dart';
+import '../views/Filters/FilterController.dart';
 import '../Splash Screen/SplashScreen.dart';
 import '../TryOn/VirtualTryOnScreen.dart';
 import '../views/Filters/FilterView.dart';
@@ -30,8 +30,8 @@ import '../views/categories/WomenWear/womencat.dart';
 import '../views/categories/kidscat.dart' hide InfantsView;
 import '../views/categories/womenScreen.dart' hide EthnicWearView;
 import '../views/tabview/tabviews.dart';
-import '../Cart/CartController.dart';
-import '../Cart/CartView.dart';
+import '../Cart/Cart/CartController.dart';
+import '../Cart/Cart/CartView.dart';
 
 // RouteManager is now in main.dart - no need to duplicate it here
 
@@ -322,12 +322,10 @@ class AppRoutes {
 
     // Filters
     GetPage(
-      name: filter,
-      page: () => FilterView(
-        category: Get.arguments?['category'] ?? 'Women',
-      ),
+      name: '/filter',
+      page: () => const FilterView(),
       transition: Transition.downToUp,
-      transitionDuration: Duration(milliseconds: 300),
+      transitionDuration: const Duration(milliseconds: 300),
       binding: BindingsBuilder(() {
         Get.lazyPut<FilterController>(() => FilterController());
       }),

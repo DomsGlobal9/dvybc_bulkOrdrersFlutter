@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dvybc/data/views/home/homeScreen.dart';
 import 'package:get/get.dart';
-import '../views/Widgets/CustomDVYBAppBarWithBack.dart';
-import '../views/home/CustomAppBar.dart';
+import '../../views/Widgets/CustomDVYBAppBarWithBack.dart';
+import '../../views/home/CustomAppBar.dart';
 import 'CartController.dart';
 
 class CartView extends StatelessWidget {

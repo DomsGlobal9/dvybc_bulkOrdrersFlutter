@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import '../views/home/homeScreen.dart';
-import '../model/Women/WomenModel.dart';
+import '../../views/home/homeScreen.dart';
+import '../../model/Women/WomenModel.dart';
 
 // Cart Item interface
 class CartItem {

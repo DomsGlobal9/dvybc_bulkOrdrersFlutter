@@ -1,20 +1,28 @@
 // lib/views/FilterView.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../Controllers/FilterController.dart';
+import 'FilterController.dart';
 
 class FilterView extends StatelessWidget {
-  final String category;
-
-  const FilterView({Key? key, required this.category}) : super(key: key);
+  const FilterView({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final FilterController controller = Get.put(FilterController());
 
-    // Set category when view is built
+    // Get arguments passed from ProductDetailController
+    final args = Get.arguments as Map<String, dynamic>?;
+    final category = args?['category'] ?? '';
+    final filters = args?['filters'];
+
+    // Set category and filters when view is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.setCategory(category);
+      if (category.isNotEmpty) {
+        controller.setCategory(category);
+      }
+      if (filters != null) {
+        controller.filters.value = filters;
+      }
     });
 
     return Material(

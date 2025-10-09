@@ -107,19 +107,30 @@ class WomenSubcategoryView extends StatelessWidget {
           children: [
             // Header Section
             Padding(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    mainCategory,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.black),
+                        onPressed: onBackPressed ?? () => Get.back(),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        mainCategory,
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Text(
                     'Choose from our curated collection',
                     style: TextStyle(
@@ -133,11 +144,11 @@ class WomenSubcategoryView extends StatelessWidget {
 
             // Subcategories Grid
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: GridView.builder(
                 shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   childAspectRatio: 0.75,
                   mainAxisSpacing: 16,
@@ -149,22 +160,19 @@ class WomenSubcategoryView extends StatelessWidget {
                 },
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
           ],
         ),
       ),
     );
   }
 
-
-
   Widget _buildSubcategoryCard(SubcategoryData subcategory) {
     return GestureDetector(
       onTap: () {
-        // Navigate to ProductDetailView with the specific subcategory type
         Get.toNamed('/product-detail', arguments: {
           'productName': subcategory.name,
-          'category': subcategory.productType, // This will be used for Firebase query
+          'category': subcategory.productType,
         });
       },
       child: Container(
@@ -176,7 +184,7 @@ class WomenSubcategoryView extends StatelessWidget {
               color: Colors.grey.withOpacity(0.1),
               spreadRadius: 1,
               blurRadius: 8,
-              offset: Offset(0, 2),
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -185,7 +193,7 @@ class WomenSubcategoryView extends StatelessWidget {
             // Subcategory Image
             Expanded(
               child: Container(
-                margin: EdgeInsets.all(12),
+                margin: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -204,9 +212,8 @@ class WomenSubcategoryView extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(Icons.image_outlined,
-                                  size: 40,
-                                  color: Colors.grey[400]),
-                              SizedBox(height: 8),
+                                  size: 40, color: Colors.grey[400]),
+                              const SizedBox(height: 8),
                               Text(
                                 subcategory.name,
                                 textAlign: TextAlign.center,
@@ -226,10 +233,10 @@ class WomenSubcategoryView extends StatelessWidget {
             ),
             // Subcategory Name
             Padding(
-              padding: EdgeInsets.all(12),
+              padding: const EdgeInsets.all(12),
               child: Text(
                 subcategory.name,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,

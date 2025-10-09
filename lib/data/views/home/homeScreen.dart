@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../Favorites/FavoritesController.dart';
 import '../../Favorites/FavoritesView.dart';
-import '../../Cart/CartController.dart';
+import '../../Cart/Cart/CartController.dart';
 import '../../routes/routes.dart';
 import '../tabview/tabviews.dart';
 import 'CustomAppBar.dart';

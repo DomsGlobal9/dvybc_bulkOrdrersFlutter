@@ -1,7 +1,7 @@
 // lib/viewModel/FilterController.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../model/FilterModel.dart';
+import '../../model/FilterModel.dart';
 
 class FilterController extends GetxController {
   final Rx<FilterModel> filters = FilterModel().obs;
@@ -38,22 +38,6 @@ class FilterController extends GetxController {
     '7-10 Business Days'
   ];
 
-  List<Color> get colorOptions => {
-    'Red': Colors.red,
-    'Blue': Colors.blue,
-    'Green': Colors.green,
-    'Pink': Colors.pink,
-    'Purple': Colors.purple,
-    'Yellow': Colors.yellow,
-    'Orange': Colors.orange,
-    'Black': Colors.black,
-    'White': Colors.white,
-    'Gray': Colors.grey,
-    'Navy': const Color(0xFF000080),
-    'Brown': Colors.brown,
-    'Maroon': const Color(0xFF800000),
-  }.entries.map((e) => e.value).toList();
-
   Map<String, Color> get colorMap => {
     'Red': Colors.red,
     'Blue': Colors.blue,
@@ -75,7 +59,7 @@ class FilterController extends GetxController {
     super.onInit();
     // Initialize with default values
     filters.value = FilterModel();
-    selectedFilterCategory.value = 'colour'; // Initialize selected category
+    selectedFilterCategory.value = 'colour';
     // Initialize expanded sections
     expandedSections.value = {
       'colour': false,
@@ -99,8 +83,7 @@ class FilterController extends GetxController {
 
   void setCategory(String category) {
     filters.value = filters.value.copyWith(category: category);
-    // Clear selections that might not be available for new category
-    clearAllFilters();
+    filters.refresh();
   }
 
   void toggleColor(String color) {
@@ -111,10 +94,12 @@ class FilterController extends GetxController {
       currentColors.add(color);
     }
     filters.value = filters.value.copyWith(selectedColors: currentColors);
+    filters.refresh();
   }
 
   void updatePriceRange(double min, double max) {
     filters.value = filters.value.copyWith(minPrice: min, maxPrice: max);
+    filters.refresh();
   }
 
   void toggleRating(int rating) {
@@ -125,6 +110,7 @@ class FilterController extends GetxController {
       currentRatings.add(rating);
     }
     filters.value = filters.value.copyWith(selectedRatings: currentRatings);
+    filters.refresh();
   }
 
   void toggleStyle(String style) {
@@ -135,6 +121,7 @@ class FilterController extends GetxController {
       currentStyles.add(style);
     }
     filters.value = filters.value.copyWith(selectedStyles: currentStyles);
+    filters.refresh();
   }
 
   void toggleFabric(String fabric) {
@@ -145,6 +132,7 @@ class FilterController extends GetxController {
       currentFabrics.add(fabric);
     }
     filters.value = filters.value.copyWith(selectedFabrics: currentFabrics);
+    filters.refresh();
   }
 
   void toggleDeliveryTime(String deliveryTime) {
@@ -155,6 +143,7 @@ class FilterController extends GetxController {
       currentDeliveryTimes.add(deliveryTime);
     }
     filters.value = filters.value.copyWith(selectedDeliveryTimes: currentDeliveryTimes);
+    filters.refresh();
   }
 
   void clearAllFilters() {
@@ -166,8 +155,7 @@ class FilterController extends GetxController {
     isApplying.value = true;
 
     try {
-      // Add any validation or processing logic here
-      await Future.delayed(const Duration(milliseconds: 500)); // Simulate API call
+      await Future.delayed(const Duration(milliseconds: 300));
 
       // Close the filter modal and return the filters
       Get.back(result: filters.value);
@@ -179,9 +167,9 @@ class FilterController extends GetxController {
             'Filters Applied',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
-          messageText: const Text(
-            'Your filters have been applied successfully',
-            style: TextStyle(color: Colors.white),
+          messageText: Text(
+            '${activeFilterCount} filter${activeFilterCount != 1 ? 's' : ''} applied successfully',
+            style: const TextStyle(color: Colors.white),
           ),
           duration: const Duration(seconds: 2),
           backgroundColor: const Color(0xFF10B981),

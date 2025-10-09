@@ -2,7 +2,7 @@ import 'package:get/get.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../Cart/CartController.dart';
+import '../../Cart/Cart/CartController.dart';
 import '../../Favorites/FavoritesController.dart';
 import '../../model/Women/WomenModel.dart';
 

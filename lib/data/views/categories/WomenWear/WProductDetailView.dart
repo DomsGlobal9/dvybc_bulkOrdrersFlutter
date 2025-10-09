@@ -3,7 +3,8 @@ import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../model/Women/WomenModel.dart';
 import '../../../viewModel/Women/ProductDetailViewModel.dart';
-import '../../home/CustomAppBar.dart';
+import '../../Widgets/CustomDVYBAppBarWithBack.dart';
+
 
 class ProductDetailView extends StatelessWidget {
   const ProductDetailView({Key? key}) : super(key: key);
@@ -12,40 +13,43 @@ class ProductDetailView extends StatelessWidget {
   Widget build(BuildContext context) {
     final ProductDetailController controller = Get.put(ProductDetailController());
     final String productName = Get.arguments['productName'] ?? '';
-    final String category = Get.arguments['category'] ?? '';
+    final String subCategory = Get.arguments['category'] ?? '';
 
+    // This callback ensures the data loading starts as soon as the widget is ready.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.loadProductVariations(productName, category);
+      if (controller.isClosed) return;
+      // This is the corrected functionality to load and filter products.
+      controller.loadProductsForCategory(productName, subCategory);
     });
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: CustomAppBar(),
+      appBar: CustomDVYBAppBar(),
       body: Obx(() {
-        if (controller.isLoading.value) {
+        // Show the original shimmer effect while loading.
+        if (controller.isLoading.value && controller.filteredProducts.isEmpty) {
           return _buildShimmerLoading();
         }
 
         return Column(
           children: [
+            // This is your original header UI.
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               color: Colors.white,
               child: Row(
                 children: [
-                  // Back button
                   IconButton(
-                    icon: Icon(Icons.arrow_back, color: Colors.black),
+                    icon: const Icon(Icons.arrow_back, color: Colors.black),
                     onPressed: () => Get.back(),
                     padding: EdgeInsets.zero,
-                    constraints: BoxConstraints(),
+                    constraints: const BoxConstraints(),
                   ),
-                  SizedBox(width: 12),
-                  // Product name
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       productName,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
                         color: Colors.black,
@@ -53,19 +57,18 @@ class ProductDetailView extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Filter button
                   GestureDetector(
                     onTap: () => controller.openFilterModal(),
                     child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: Color(0xFF447B9E),
+                          color: const Color(0xFF447B9E),
                           width: 0.6,
                         ),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Row(
+                      child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
@@ -91,12 +94,12 @@ class ProductDetailView extends StatelessWidget {
               ),
             ),
 
-            // Product Grid
+            // Product Grid or Empty State
             Expanded(
               child: controller.filteredProducts.isEmpty
-                  ? SizedBox()
+                  ? _buildEmptyState()
                   : GridView.builder(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   childAspectRatio: 0.7,
@@ -105,6 +108,7 @@ class ProductDetailView extends StatelessWidget {
                 ),
                 itemCount: controller.filteredProducts.length,
                 itemBuilder: (context, index) {
+                  // Using your original product card design.
                   return _buildProductCard(controller.filteredProducts[index]);
                 },
               ),
@@ -115,11 +119,14 @@ class ProductDetailView extends StatelessWidget {
     );
   }
 
+  // --- WIDGETS ---
+  // All the UI widgets below are restored from your original design.
+
   Widget _buildShimmerLoading() {
     return Column(
       children: [
         Container(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           color: Colors.white,
           child: Row(
             children: [
@@ -135,7 +142,7 @@ class ProductDetailView extends StatelessWidget {
                   ),
                 ),
               ),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
               Expanded(
                 child: Shimmer.fromColors(
                   baseColor: Colors.grey[300]!,
@@ -149,7 +156,7 @@ class ProductDetailView extends StatelessWidget {
                   ),
                 ),
               ),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
               Shimmer.fromColors(
                 baseColor: Colors.grey[300]!,
                 highlightColor: Colors.grey[100]!,
@@ -167,10 +174,10 @@ class ProductDetailView extends StatelessWidget {
         ),
         Expanded(
           child: GridView.builder(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               childAspectRatio: 0.7,
               mainAxisSpacing: 16,
@@ -207,7 +214,7 @@ class ProductDetailView extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: EdgeInsets.all(8),
+              padding: const EdgeInsets.all(8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -219,7 +226,7 @@ class ProductDetailView extends StatelessWidget {
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Container(
                     width: 60,
                     height: 12,
@@ -239,7 +246,7 @@ class ProductDetailView extends StatelessWidget {
 
   Widget _buildEmptyState() {
     return Container(
-      padding: EdgeInsets.all(40),
+      padding: const EdgeInsets.all(40),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -248,7 +255,7 @@ class ProductDetailView extends StatelessWidget {
             size: 80,
             color: Colors.grey[300],
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Text(
             'No products found',
             style: TextStyle(
@@ -258,7 +265,7 @@ class ProductDetailView extends StatelessWidget {
               fontFamily: 'Outfit',
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
             'Try adjusting your filters or search terms',
             style: TextStyle(
@@ -268,17 +275,17 @@ class ProductDetailView extends StatelessWidget {
             ),
             textAlign: TextAlign.center,
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           ElevatedButton(
             onPressed: () => Get.find<ProductDetailController>().clearAllFilters(),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Color(0xFF447B9E),
-              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              backgroundColor: const Color(0xFF447B9E),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25),
               ),
             ),
-            child: Text(
+            child: const Text(
               'Clear Filters',
               style: TextStyle(
                 color: Colors.white,
@@ -308,7 +315,7 @@ class ProductDetailView extends StatelessWidget {
               color: Colors.grey.withOpacity(0.1),
               spreadRadius: 1,
               blurRadius: 4,
-              offset: Offset(0, 2),
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -319,7 +326,7 @@ class ProductDetailView extends StatelessWidget {
               child: Stack(
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.only(
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(8),
                       topRight: Radius.circular(8),
                     ),
@@ -345,13 +352,12 @@ class ProductDetailView extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Favorite button at top right
                   Positioned(
                     top: 8,
                     right: 8,
                     child: Container(
-                      padding: EdgeInsets.all(6),
-                      decoration: BoxDecoration(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
                         color: Colors.white,
                         shape: BoxShape.circle,
                       ),
@@ -362,7 +368,6 @@ class ProductDetailView extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Try on badge at bottom left
                   Positioned(
                     bottom: 0,
                     left: 0,
@@ -370,13 +375,13 @@ class ProductDetailView extends StatelessWidget {
                       width: 53,
                       height: 18,
                       decoration: BoxDecoration(
-                        color: Color(0xFFFFFAFA).withOpacity(0.8),
-                        borderRadius: BorderRadius.only(
+                        color: const Color(0xFFFFFAFA).withOpacity(0.8),
+                        borderRadius: const BorderRadius.only(
                           topRight: Radius.circular(4),
                           bottomLeft: Radius.circular(4),
                         ),
                       ),
-                      child: Center(
+                      child: const Center(
                         child: Text(
                           'Try on',
                           style: TextStyle(
@@ -393,13 +398,13 @@ class ProductDetailView extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: EdgeInsets.all(12),
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    product.name,
-                    style: TextStyle(
+                    product.displayName,
+                    style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
@@ -408,10 +413,10 @@ class ProductDetailView extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 6),
+                  const SizedBox(height: 6),
                   Text(
                     '₹${product.price ?? (product.id.hashCode % 5000) + 500}',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF447B9E),
@@ -427,4 +432,3 @@ class ProductDetailView extends StatelessWidget {
     );
   }
 }
-
