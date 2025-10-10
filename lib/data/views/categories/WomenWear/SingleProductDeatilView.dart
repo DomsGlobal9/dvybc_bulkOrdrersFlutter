@@ -391,6 +391,10 @@ class SingleProductView extends StatelessWidget {
       RxInt currentImageIndex,
       PageController pageController,
       ) {
+    // Normalize product type to check if it's a saree
+    final String normalizedProductType = product.dressType?.trim().toLowerCase().replaceAll(RegExp(r's$'), '') ?? '';
+    final bool isSaree = normalizedProductType == 'saree';
+
     return Stack(
       children: [
         CustomScrollView(
@@ -739,62 +743,64 @@ class SingleProductView extends StatelessWidget {
                         ],
                       ),
                     ),
-                    SizedBox(height: 24),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Selected Size',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black,
+                    if (!isSaree) ...[
+                      SizedBox(height: 24),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Selected Size',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black,
+                                  ),
                                 ),
-                              ),
-                              GestureDetector(
-                                  onTap: () => _showSizeGuideModal(context),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Size Guide',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
-                                          color: Color(0xFF187DBD),
-                                          decoration: TextDecoration.none,
+                                GestureDetector(
+                                    onTap: () => _showSizeGuideModal(context),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Size Guide',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                            color: Color(0xFF187DBD),
+                                            decoration: TextDecoration.none,
+                                          ),
                                         ),
-                                      ),
-                                      SizedBox(height: 2),
-                                      Container(
-                                        height: 1,
-                                        width: 65,
-                                        color: Color(0xFF187DBD),
-                                      ),
-                                    ],
-                                  )
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 12),
-                          Obx(() => Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: controller.availableSizes.map((size) {
-                              bool isSelected = controller.selectedSizes.contains(size);
-                              int? quantity = controller.selectedSizeQuantities[size];
+                                        SizedBox(height: 2),
+                                        Container(
+                                          height: 1,
+                                          width: 65,
+                                          color: Color(0xFF187DBD),
+                                        ),
+                                      ],
+                                    )
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 12),
+                            Obx(() => Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: controller.availableSizes.map((size) {
+                                bool isSelected = controller.selectedSizes.contains(size);
+                                int? quantity = controller.selectedSizeQuantities[size];
 
-                              return _buildSizeOption(size, isSelected, controller, quantity);
-                            }).toList(),
-                          )),
-                        ],
+                                return _buildSizeOption(size, isSelected, controller, quantity);
+                              }).toList(),
+                            )),
+                          ],
+                        ),
                       ),
-                    ),
+                    ],
                     SizedBox(height: 24),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 20),

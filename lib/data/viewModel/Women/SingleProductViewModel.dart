@@ -38,8 +38,16 @@ class SingleProductController extends GetxController {
     isLoading.value = true;
 
     currentProduct.value = product;
-    selectedSizes.value = ['M'];
-    selectedSizeQuantities.value = {'M': 1};
+
+    // Check if it's a saree
+    bool isSaree = product.dressType?.toLowerCase() == 'saree' || product.name.toLowerCase().contains('saree');
+    if (isSaree) {
+      selectedSizes.value = [];
+      selectedSizeQuantities.value = {};
+    } else {
+      selectedSizes.value = ['M'];
+      selectedSizeQuantities.value = {'M': 1};
+    }
 
     isFavorite.value = _favoritesController.isWomenProductFavorited(product);
 
@@ -341,7 +349,28 @@ class SingleProductController extends GetxController {
   }
 
   void addToCart() {
-    if (currentProduct.value != null) {
+    if (currentProduct.value == null) return;
+
+    WomenProduct product = currentProduct.value!;
+    bool isSaree = product.dressType?.toLowerCase() == 'saree' || product.name.toLowerCase().contains('saree');
+
+    if (isSaree) {
+      // For saree, add directly with empty size
+      _cartController.addWomenProductToCart(
+        product,
+        getRandomPrice(),
+        '',
+        selectedColor.value,
+      );
+      Get.snackbar(
+        'Added to Cart',
+        '${product.name} has been added to your cart',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Color(0xFF10B981),
+        colorText: Colors.white,
+        duration: Duration(seconds: 3),
+      );
+    } else {
       _showAddToCartModal();
     }
   }
@@ -398,20 +427,26 @@ class SingleProductController extends GetxController {
   }
 
   void buyNow() {
-    if (!currentProduct.value!.name.toLowerCase().contains('saree') && selectedSizes.isEmpty) {
+    if (currentProduct.value == null) return;
+
+    WomenProduct product = currentProduct.value!;
+    bool isSaree = product.dressType?.toLowerCase() == 'saree' || product.name.toLowerCase().contains('saree');
+
+    if (!isSaree && selectedSizes.isEmpty) {
+      Get.snackbar('Error', 'Please select a size');
       return;
     }
 
-    if (currentProduct.value != null && selectedSizes.isNotEmpty) {
-      _cartController.addWomenProductToCart(
-        currentProduct.value!,
-        getRandomPrice(),
-        selectedSizes.first,
-        selectedColor.value,
-      );
-    }
+    String sizeToUse = isSaree ? '' : selectedSizes.first;
 
-    Future.delayed(Duration(seconds: 1), () {
+    _cartController.addWomenProductToCart(
+      product,
+      getRandomPrice(),
+      sizeToUse,
+      selectedColor.value,
+    );
+
+    Future.delayed(Duration(milliseconds: 500), () {
       Get.toNamed('/cart');
     });
   }

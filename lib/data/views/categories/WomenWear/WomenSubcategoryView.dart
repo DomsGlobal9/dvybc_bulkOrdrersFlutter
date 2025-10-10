@@ -19,11 +19,11 @@ class SubcategoryData {
 final Map<String, List<SubcategoryData>> subcategoryData = {
   'Ethnic wear': [
     SubcategoryData(name: 'Sarees', assetImage: 'assets/images/subcategories/ethnic/sarees.png', productType: 'saree'),
-    SubcategoryData(name: 'Salwar Suits', assetImage: 'assets/images/subcategories/ethnic/salwar_suits.png', productType: 'salwar'),
+    SubcategoryData(name: 'Salwar Suit', assetImage: 'assets/images/subcategories/ethnic/salwar_suits.png', productType: 'salwar suit'),
     SubcategoryData(name: 'Lehengas', assetImage: 'assets/images/subcategories/ethnic/lehengas.png', productType: 'lehenga'),
     SubcategoryData(name: 'Anarkali', assetImage: 'assets/images/subcategories/ethnic/anarkali.png', productType: 'anarkali'),
     SubcategoryData(name: 'Dupattas', assetImage: 'assets/images/subcategories/ethnic/dupattas.png', productType: 'dupatta'),
-    SubcategoryData(name: 'Ethnic Jackets', assetImage: 'assets/images/subcategories/ethnic/ethnic_jackets.png', productType: 'ethnic_jacket'),
+    SubcategoryData(name: 'Ethnic Jacket', assetImage: 'assets/images/subcategories/ethnic/ethnic_jackets.png', productType: 'ethnic jackets'),
   ],
   'Top wear': [
     SubcategoryData(name: 'T-Shirts', assetImage: 'assets/images/subcategories/topwear/tshirts.png', productType: 'tshirt'),

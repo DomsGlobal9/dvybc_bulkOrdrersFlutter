@@ -211,7 +211,7 @@ class SareeController extends BaseWomenController {
 
 class SalwarController extends BaseWomenController {
   @override
-  String get subcategory => 'salwar';
+  String get subcategory => 'salwar suits';
 }
 
 class LehengaController extends BaseWomenController {
@@ -231,7 +231,7 @@ class DupattaController extends BaseWomenController {
 
 class EthnicJacketController extends BaseWomenController {
   @override
-  String get subcategory => 'ethnic_jacket';
+  String get subcategory => 'ethnic jacket';
 }
 
 class KurtaController extends BaseWomenController {
